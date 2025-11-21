@@ -35,8 +35,12 @@ Alternatively, use AWS CLI:
 ```bash
 aws iam create-open-id-connect-provider \
   --url https://token.actions.githubusercontent.com \
-  --client-id-list sts.amazonaws.com \
-  --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
+  --client-id-list sts.amazonaws.com
+```
+
+**Note**: The thumbprint is automatically obtained by AWS. If you need to manually specify it, you can get the current thumbprint using:
+```bash
+openssl s_client -servername token.actions.githubusercontent.com -showcerts -connect token.actions.githubusercontent.com:443 < /dev/null 2>/dev/null | openssl x509 -fingerprint -noout -sha1 | sed 's/://g' | sed 's/SHA1 Fingerprint=//'
 ```
 
 ### Step 2: Create IAM Role Trust Policy
@@ -95,7 +99,6 @@ Create a file named `github-actions-permissions-policy.json` with the following 
         "ecr:InitiateLayerUpload",
         "ecr:UploadLayerPart",
         "ecr:CompleteLayerUpload",
-        "ecr:CreateRepository",
         "ecr:DescribeRepositories"
       ],
       "Resource": "*"
@@ -129,6 +132,8 @@ Create a file named `github-actions-permissions-policy.json` with the following 
 
 - ECR: `"Resource": "arn:aws:ecr:ap-northeast-1:ACCOUNT_ID:repository/typescript-container"`
 - ECS: `"Resource": "arn:aws:ecs:ap-northeast-1:ACCOUNT_ID:service/typescript-container-cluster/typescript-container-service"`
+
+**Important**: The ECR repository must be created manually before first deployment. The policy intentionally does not include `ecr:CreateRepository` to prevent unauthorized repository creation.
 
 ### Step 4: Create the IAM Role
 
@@ -173,12 +178,14 @@ Example:
   "taskRoleArn": "arn:aws:iam::123456789012:role/ecsTaskRole",
   "containerDefinitions": [
     {
-      "image": "123456789012.dkr.ecr.ap-northeast-1.amazonaws.com/typescript-container:latest",
+      "image": "123456789012.dkr.ecr.ap-northeast-1.amazonaws.com/typescript-container:IMAGE_TAG",
       ...
     }
   ]
 }
 ```
+
+**Note**: The `IMAGE_TAG` placeholder will be replaced dynamically by the GitHub Actions workflow with the actual commit SHA.
 
 ### Step 6: Create GitHub Repository Secret
 
@@ -227,6 +234,8 @@ If you encounter errors, verify:
 Before running the workflow, ensure the following AWS resources exist:
 
 1. **ECR Repository**: `typescript-container` in `ap-northeast-1`
+   - **Important**: The ECR repository must be created manually before the first deployment, as the permissions policy does not include `ecr:CreateRepository` for security reasons
+   - Create with: `aws ecr create-repository --repository-name typescript-container --region ap-northeast-1`
 2. **ECS Cluster**: `typescript-container-cluster`
 3. **ECS Service**: `typescript-container-service` (can be created by the first deployment)
 4. **IAM Roles**:
