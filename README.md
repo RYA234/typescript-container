@@ -10,6 +10,30 @@
 
 ## 🚀 セットアップ手順
 
+### オプション A: 自動セットアップ（推奨）
+
+セットアップスクリプトを使用すると、AWS リソースを自動的に作成できます：
+
+```bash
+# AWS CLI が設定されていることを確認
+aws configure
+
+# セットアップスクリプトを実行
+./setup-aws.sh
+```
+
+このスクリプトは以下のリソースを自動的に作成します：
+- ECR リポジトリ
+- ECS クラスター
+- CloudWatch ロググループ
+- セキュリティグループ
+- ECS タスク定義
+- ECS サービス
+
+### オプション B: 手動セットアップ
+
+以下の手順で手動で AWS リソースを作成することもできます：
+
 ### 1. AWS リソースの作成
 
 以下の AWS リソースを作成する必要があります：
@@ -106,10 +130,53 @@ aws ecs create-service \
 | `AWS_ACCESS_KEY_ID` | AWS アクセスキー ID | IAM ユーザーから取得 |
 | `AWS_SECRET_ACCESS_KEY` | AWS シークレットアクセスキー | IAM ユーザーから取得 |
 
-**IAM ユーザーに必要な権限:**
+**IAM ユーザーに必要な最小限の権限:**
+
+テスト環境では以下の管理ポリシーを使用できます：
 - AmazonEC2ContainerRegistryPowerUser
 - AmazonECS_FullAccess
 - CloudWatchLogsFullAccess
+
+**本番環境では最小権限の原則に従ってカスタム IAM ポリシーを作成することを強く推奨します：**
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetAuthorizationToken",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage",
+        "ecr:PutImage",
+        "ecr:InitiateLayerUpload",
+        "ecr:UploadLayerPart",
+        "ecr:CompleteLayerUpload"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecs:UpdateService",
+        "ecs:DescribeServices",
+        "ecs:DescribeTaskDefinition",
+        "ecs:RegisterTaskDefinition"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:PassRole"
+      ],
+      "Resource": "arn:aws:iam::*:role/ecsTaskExecutionRole"
+    }
+  ]
+}
+```
 
 ### 3. ワークフローファイルの設定確認
 
@@ -222,9 +289,11 @@ npm start
 ## 🔐 セキュリティのベストプラクティス
 
 - AWS アクセスキーは GitHub Secrets として安全に保管
-- 本番環境では IAM ロールを使用した権限管理を推奨
+- 本番環境では最小権限の原則に従った IAM ポリシーを使用（上記の例を参照）
 - セキュリティグループで必要最小限のポートのみ開放
-- VPC のプライベートサブネットでタスクを実行（ALB 経由でアクセス）
+- **本番環境では**：Application Load Balancer (ALB) を使用し、ECS タスクをプライベートサブネットに配置することを強く推奨
+- 定期的なセキュリティパッチの適用とイメージの更新
+- シークレット情報は AWS Secrets Manager または Systems Manager Parameter Store を使用
 
 ## 📚 参考リンク
 
