@@ -38,8 +38,10 @@ aws iam create-open-id-connect-provider \
   --client-id-list sts.amazonaws.com
 ```
 
-**Note**: The thumbprint is automatically obtained by AWS. If you need to manually specify it, you can get the current thumbprint using:
+**Note**: AWS automatically obtains the thumbprint from the OIDC provider. The manual thumbprint retrieval below is only needed in rare cases where you need to pre-validate or troubleshoot the provider setup:
+
 ```bash
+# Optional: Get current thumbprint manually for validation
 openssl s_client -servername token.actions.githubusercontent.com -showcerts -connect token.actions.githubusercontent.com:443 < /dev/null 2>/dev/null | openssl x509 -fingerprint -noout -sha1 | sed 's/://g' | sed 's/SHA1 Fingerprint=//'
 ```
 
@@ -130,8 +132,9 @@ Create a file named `github-actions-permissions-policy.json` with the following 
 
 **Security Note**: For production environments, further restrict the `Resource` fields:
 
-- ECR: `"Resource": "arn:aws:ecr:ap-northeast-1:ACCOUNT_ID:repository/typescript-container"`
-- ECS: `"Resource": "arn:aws:ecs:ap-northeast-1:ACCOUNT_ID:service/typescript-container-cluster/typescript-container-service"`
+- **ECR repository operations**: `"Resource": "arn:aws:ecr:ap-northeast-1:ACCOUNT_ID:repository/typescript-container"` for operations like `PutImage`, `GetDownloadUrlForLayer`, etc.
+- **Note**: `ecr:GetAuthorizationToken` always requires `"Resource": "*"` as it operates at the registry level, not repository level
+- **ECS**: `"Resource": "arn:aws:ecs:ap-northeast-1:ACCOUNT_ID:service/typescript-container-cluster/typescript-container-service"`
 
 **Important**: The ECR repository must be created manually before first deployment. The policy intentionally does not include `ecr:CreateRepository` to prevent unauthorized repository creation.
 

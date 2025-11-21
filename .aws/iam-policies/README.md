@@ -59,12 +59,31 @@ aws iam put-role-policy \
 
 For production environments, consider restricting the permissions policy resources:
 
-### ECR - Restrict to specific repository
+### ECR - Restrict repository-specific operations
+
+Note: Some ECR actions operate at different levels:
+- **Registry level** (requires `Resource: "*"`): `ecr:GetAuthorizationToken`
+- **Repository level** (can be restricted): `ecr:PutImage`, `ecr:BatchCheckLayerAvailability`, etc.
+
+Example of mixed resource restrictions:
 ```json
 {
-  "Sid": "ECRPermissions",
+  "Sid": "ECRAuthToken",
   "Effect": "Allow",
-  "Action": [...],
+  "Action": "ecr:GetAuthorizationToken",
+  "Resource": "*"
+},
+{
+  "Sid": "ECRRepositoryAccess",
+  "Effect": "Allow",
+  "Action": [
+    "ecr:BatchCheckLayerAvailability",
+    "ecr:GetDownloadUrlForLayer",
+    "ecr:PutImage",
+    "ecr:InitiateLayerUpload",
+    "ecr:UploadLayerPart",
+    "ecr:CompleteLayerUpload"
+  ],
   "Resource": "arn:aws:ecr:ap-northeast-1:ACCOUNT_ID:repository/typescript-container"
 }
 ```
