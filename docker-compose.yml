@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  web:
+    build: .
+    # Optional: 直接 ECR のイメージURIを指定して使う場合は image を設定します
+    # image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}
+    ports:
+      - "3000:3000"            # ホスト80 -> コンテナ3000(ECSではポートマッピングを適宜変更)
+    environment:
+      - PORT=3000
+    # ローカル開発用: CloudWatch Logsは使わずjson-fileドライバーを使用
+    # ECS/Fargate環境ではタスク定義でawslogsを設定
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
