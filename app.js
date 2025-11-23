@@ -1,8 +1,9 @@
 const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
+const basePath = '/node';
 
-app.get('/', (req, res) => {
+app.get(basePath, (req, res) => {
   res.send('Hello from Node.js on ECS!');
 });
 
