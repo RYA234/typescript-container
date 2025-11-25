@@ -10,9 +10,9 @@ on:
 
 env:
   AWS_REGION: ap-northeast-1
-  ECR_REPOSITORY: test
-  ECS_SERVICE: node_sample1222-service-m8n6ttka
-  ECS_CLUSTER: electric-cat-oufw4g
+  ECR_REPOSITORY: nodejs-app
+  ECS_SERVICE: nodejs-service
+  ECS_CLUSTER: app-cluster
   ECS_TASK_DEFINITION: .aws/task-definition.json
   CONTAINER_NAME: web
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
