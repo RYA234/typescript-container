@@ -1,17 +1,37 @@
-# 軽量な Node.js イメージ
+# ===========================
+# Stage 1: Build Stage
+# ===========================
+FROM node:18-alpine AS builder
+
+WORKDIR /usr/src/app
+
+# 依存関係のインストール（開発依存関係含む）
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+# TypeScriptソースコードをコピー
+COPY tsconfig.json ./
+COPY app.ts ./
+
+# TypeScriptをコンパイル
+RUN npm run build
+
+# ===========================
+# Stage 2: Production Stage
+# ===========================
 FROM node:18-alpine
 
 WORKDIR /usr/src/app
 
-# 依存関係だけ先にコピーしてキャッシュを有効にする
+# 本番依存関係のみインストール
 COPY package.json package-lock.json* ./
+RUN npm ci --only=production && \
+    npm cache clean --force
 
-# 依存関係をインストール
-RUN npm install --production
-
-# アプリコードをコピー
-COPY . .
+# ビルドステージからコンパイル済みJSをコピー
+COPY --from=builder /usr/src/app/dist ./dist
 
 EXPOSE 3000
 
-CMD ["node", "app.js"]
+# コンパイル済みJavaScriptを実行
+CMD ["node", "dist/app.js"]
