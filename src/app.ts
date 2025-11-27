@@ -14,6 +14,11 @@ app.get(basePath, (_req: Request, res: Response): void => {
   res.send('Hello from Node.js on ECS!');
 });
 
-app.listen(port, (): void => {
-  console.log(`App listening on port ${port}`);
-});
+// Only start server if this file is run directly
+if (require.main === module) {
+  app.listen(port, (): void => {
+    console.log(`App listening on port ${port}`);
+  });
+}
+
+export default app;
