@@ -11,7 +11,7 @@ RUN npm ci
 
 # TypeScriptソースコードをコピー
 COPY tsconfig.json ./
-COPY app.ts ./
+COPY src ./src
 
 # TypeScriptをコンパイル
 RUN npm run build
@@ -34,4 +34,4 @@ COPY --from=builder /usr/src/app/dist ./dist
 EXPOSE 3000
 
 # コンパイル済みJavaScriptを実行
-CMD ["node", "dist/app.js"]
+CMD ["node", "dist/src/app.js"]
