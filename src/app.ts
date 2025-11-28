@@ -15,21 +15,6 @@ app.get(basePath, (_req: Request, res: Response): void => {
   res.send('Hello from Node.js on ECS!');
 });
 
-// Configuration status endpoint (doesn't expose secrets)
-app.get('/config-status', (_req: Request, res: Response): void => {
-  res.json({
-    status: 'configured',
-    services: {
-      gemini: config.gemini.apiKey.startsWith('dummy') ? 'dummy' : 'configured',
-      supabase: {
-        url: config.supabase.url,
-        anonKey: config.supabase.anonKey.startsWith('dummy') ? 'dummy' : 'configured',
-      },
-    },
-    port: config.port,
-  });
-});
-
 // Only start server if this file is run directly
 if (require.main === module) {
   app.listen(port, (): void => {

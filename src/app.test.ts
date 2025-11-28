@@ -33,18 +33,4 @@ describe('Express App', () => {
       expect(response.status).toBe(404);
     });
   });
-
-  describe('GET /config-status', () => {
-    it('should return configuration status', async () => {
-      const response = await request(app).get('/config-status');
-
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('status', 'configured');
-      expect(response.body).toHaveProperty('services');
-      expect(response.body.services).toHaveProperty('gemini');
-      expect(response.body.services).toHaveProperty('supabase');
-      expect(response.body.services.supabase).toHaveProperty('url', 'https://test-project.supabase.co');
-      expect(response.body).toHaveProperty('port', 3000);
-    });
-  });
 });

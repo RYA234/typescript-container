@@ -6,3 +6,4 @@ npm-debug.log*
 .env
 playwright-report/
 test-results/
+start-local.bat
