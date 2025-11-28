@@ -15,6 +15,18 @@ app.get(basePath, (_req: Request, res: Response): void => {
   res.send('Hello from Node.js on ECS!');
 });
 
+// Health check with configuration status (safe for production)
+app.get(`${basePath}/health`, (_req: Request, res: Response): void => {
+  res.json({
+    status: 'healthy',
+    configured: {
+      gemini: !!config.gemini.apiKey,
+      supabase: !!config.supabase.url && !!config.supabase.anonKey,
+    },
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Only start server if this file is run directly
 if (require.main === module) {
   app.listen(port, (): void => {

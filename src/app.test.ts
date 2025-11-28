@@ -33,4 +33,17 @@ describe('Express App', () => {
       expect(response.status).toBe(404);
     });
   });
+
+  describe('GET /node/health', () => {
+    it('should return health status with configuration check', async () => {
+      const response = await request(app).get('/node/health');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('status', 'healthy');
+      expect(response.body).toHaveProperty('configured');
+      expect(response.body.configured).toHaveProperty('gemini', true);
+      expect(response.body.configured).toHaveProperty('supabase', true);
+      expect(response.body).toHaveProperty('timestamp');
+    });
+  });
 });
