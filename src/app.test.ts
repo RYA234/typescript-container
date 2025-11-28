@@ -1,3 +1,9 @@
+// Set up environment variables before importing app
+process.env.GEMINI_API_KEY = 'test-gemini-api-key';
+process.env.SUPABASE_URL = 'https://test-project.supabase.co';
+process.env.SUPABASE_ANON_KEY = 'test-supabase-anon-key';
+process.env.PORT = '3000';
+
 import request from 'supertest';
 import app from './app';
 
@@ -25,6 +31,19 @@ describe('Express App', () => {
       const response = await request(app).get('/unknown');
 
       expect(response.status).toBe(404);
+    });
+  });
+
+  describe('GET /node/health', () => {
+    it('should return health status with configuration check', async () => {
+      const response = await request(app).get('/node/health');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('status', 'healthy');
+      expect(response.body).toHaveProperty('configured');
+      expect(response.body.configured).toHaveProperty('gemini', true);
+      expect(response.body.configured).toHaveProperty('supabase', true);
+      expect(response.body).toHaveProperty('timestamp');
     });
   });
 });

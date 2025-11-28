@@ -1,7 +1,8 @@
 import express, { Request, Response } from 'express';
+import { config } from './config';
 
 const app = express();
-const port: number = parseInt(process.env.PORT || '3000', 10);
+const port: number = config.port;
 const basePath: string = '/node';
 
 // Health check endpoint for ALB
@@ -12,6 +13,18 @@ app.get('/', (_req: Request, res: Response): void => {
 // Main application endpoint
 app.get(basePath, (_req: Request, res: Response): void => {
   res.send('Hello from Node.js on ECS!');
+});
+
+// Health check with configuration status (safe for production)
+app.get(`${basePath}/health`, (_req: Request, res: Response): void => {
+  res.json({
+    status: 'healthy',
+    configured: {
+      gemini: !!config.gemini.apiKey,
+      supabase: !!config.supabase.url && !!config.supabase.anonKey,
+    },
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Only start server if this file is run directly
