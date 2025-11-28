@@ -18,12 +18,14 @@ app.get(basePath, (_req: Request, res: Response): void => {
 // Health check with configuration status (safe for production)
 app.get(`${basePath}/health`, (_req: Request, res: Response): void => {
   const isDummyGemini = config.gemini.apiKey.includes('dummy');
+  const isDummyLangchain = config.langchain.apiKey.includes('dummy');
   const isDummySupabase = config.supabase.url.includes('dummy') || config.supabase.anonKey.includes('dummy');
 
   res.json({
     status: 'healthy',
     configured: {
       gemini: !!config.gemini.apiKey && !isDummyGemini,
+      langchain: !!config.langchain.apiKey && !isDummyLangchain,
       supabase: !!config.supabase.url && !!config.supabase.anonKey && !isDummySupabase,
     },
     timestamp: new Date().toISOString(),

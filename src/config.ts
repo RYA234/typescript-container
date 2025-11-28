@@ -2,6 +2,9 @@ interface Config {
   gemini: {
     apiKey: string;
   };
+  langchain: {
+    apiKey: string;
+  };
   supabase: {
     url: string;
     anonKey: string;
@@ -25,6 +28,9 @@ export const config: Config = {
   gemini: {
     apiKey: getEnvVar('GEMINI_API_KEY'),
   },
+  langchain: {
+    apiKey: getEnvVar('LANGCHAIN_API_KEY'),
+  },
   supabase: {
     url: getEnvVar('SUPABASE_URL'),
     anonKey: getEnvVar('SUPABASE_ANON_KEY'),
@@ -39,6 +45,11 @@ function validateConfig(): void {
   // Validate Gemini API Key
   if (!config.gemini.apiKey || config.gemini.apiKey.trim() === '') {
     errors.push('GEMINI_API_KEY is empty');
+  }
+
+  // Validate LangChain API Key
+  if (!config.langchain.apiKey || config.langchain.apiKey.trim() === '') {
+    errors.push('LANGCHAIN_API_KEY is empty');
   }
 
   // Validate Supabase URL
