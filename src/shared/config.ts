@@ -1,16 +1,4 @@
-interface Config {
-  gemini: {
-    apiKey: string;
-  };
-  langchain: {
-    apiKey: string;
-  };
-  supabase: {
-    url: string;
-    anonKey: string;
-  };
-  port: number;
-}
+import { Config } from '../interfaces';
 
 function getEnvVar(key: string): string {
   const value = process.env[key];
