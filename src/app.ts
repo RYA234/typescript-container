@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import { config } from './shared';
+import { indexRouter } from './index';
 import { sampleRouter } from './sample';
 
 const app = express();
@@ -11,7 +12,8 @@ app.get('/', (_req: Request, res: Response): void => {
   res.status(200).send('OK');
 });
 
-// Mount sample router
+// Mount routers
+app.use(basePath, indexRouter);
 app.use(basePath, sampleRouter);
 
 // Only start server if this file is run directly
