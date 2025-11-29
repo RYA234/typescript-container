@@ -8,7 +8,7 @@ export class ChatbotService {
 
   constructor() {
     this.genAI = new GoogleGenerativeAI(config.gemini.apiKey);
-    this.model = this.genAI.getGenerativeModel({ model: 'models/gemini-1.5-flash' });
+    this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
   }
 
   async chat(message: string): Promise<ChatResponse> {
