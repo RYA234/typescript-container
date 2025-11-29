@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "dist/src/app.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run copy-views",
+    "copy-views": "node -e \"require('fs').cpSync('src/index/views', 'dist/src/index/views', {recursive: true})\"",
     "start": "node dist/src/app.js",
     "dev": "ts-node src/app.ts",
     "test:e2e": "playwright test",
