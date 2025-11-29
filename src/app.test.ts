@@ -19,11 +19,13 @@ describe('Express App', () => {
   });
 
   describe('GET /node', () => {
-    it('should return 200 OK with welcome message', async () => {
+    it('should return 200 OK with index HTML page', async () => {
       const response = await request(app).get('/node');
 
       expect(response.status).toBe(200);
-      expect(response.text).toBe('Hello from Node.js on ECS!');
+      expect(response.type).toBe('text/html');
+      expect(response.text).toContain('TypeScript Container');
+      expect(response.text).toContain('機能一覧');
     });
   });
 
