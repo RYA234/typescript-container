@@ -1,6 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+
 import { ChatResponse } from '../interfaces';
 import { config } from '../shared';
+
 
 export class ChatbotService {
   private genAI: GoogleGenerativeAI;
