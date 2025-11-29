@@ -144,6 +144,31 @@ import { sampleRouter } from './sample';
 app.use('/node', sampleRouter);
 ```
 
+### 7. インデックスページを更新
+
+新しい機能を追加したら、**必ず `src/sample/views/index.html` を更新**してください：
+
+```html
+<!-- src/sample/views/index.html -->
+<li class="feature-item">
+  <a href="/node/[feature-name]" class="feature-link">
+    <div class="feature-name">
+      [Feature Display Name]
+      <span class="status active">稼働中</span>
+    </div>
+    <div class="feature-desc">
+      機能の説明
+    </div>
+  </a>
+</li>
+```
+
+開発予定の機能の場合は `status planned` を使用：
+
+```html
+<span class="status planned">開発予定</span>
+```
+
 ## 禁止事項
 
 1. **直接的なファイル操作**: ビジネスロジックでファイルシステムに直接アクセスしない
