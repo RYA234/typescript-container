@@ -229,6 +229,26 @@ aws ecs describe-tasks \
 
 ## 🛠️ ローカル開発
 
+### 環境変数の設定
+
+ローカル開発では `.env` ファイルから環境変数を読み込みます。
+
+1. `.env.example` をコピーして `.env` ファイルを作成：
+   ```bash
+   cp .env.example .env
+   ```
+
+2. `.env` ファイルを編集して、実際のAPIキーなどを設定：
+   ```bash
+   GEMINI_API_KEY=your_actual_gemini_api_key
+   LANGCHAIN_API_KEY=your_actual_langchain_api_key
+   SUPABASE_URL=https://your-project.supabase.co
+   SUPABASE_ANON_KEY=your_actual_supabase_anon_key
+   PORT=3000
+   ```
+
+3. **注意**: `.env` ファイルは `.gitignore` に含まれており、Gitにコミットされません。機密情報を含むため、絶対にリポジトリに含めないでください。
+
 ### Docker Compose で実行
 
 ```bash
@@ -241,7 +261,9 @@ docker-compose up --build
 
 ```bash
 npm install
-npm start
+npm run dev    # 開発モード（.envファイルを自動読み込み）
+# または
+npm start      # 本番モード
 ```
 
 ## 📝 ファイル構成
