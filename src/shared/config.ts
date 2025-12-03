@@ -1,4 +1,13 @@
 import { Config } from '../interfaces';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load environment variables from .env file in local development
+if (process.env.NODE_ENV !== 'production') {
+  const envPath = path.resolve(process.cwd(), '.env');
+  dotenv.config({ path: envPath, override: true });
+  console.log('Environment variables loaded from .env file');
+}
 
 function getEnvVar(key: string): string {
   const value = process.env[key];
