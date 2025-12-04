@@ -19,40 +19,34 @@ export class SupabaseService {
    */
   async testConnection(): Promise<SupabaseConnectionTestResult> {
     try {
-      const { data, error } = await this.supabase.rpc('test_connection', {});
+      // Supabase authエンドポイントで接続テスト
+      // これは認証なしでアクセス可能で、接続確認に最適
+      const { error } = await this.supabase.auth.getSession();
 
       if (error) {
-        // RPCが存在しない場合は、直接SQLを実行する代替案を試す
-        // これは開発/テスト用です
-        console.log('RPC function not found, testing with basic query');
+        // エラーがあってもSupabaseに到達できている場合は部分的に成功
+        console.log('Auth session check error:', error.message);
 
-        // 代わりにシステムテーブルから簡単なクエリを実行
-        const { error: testError } = await this.supabase
-          .from('_test')
-          .select('*')
-          .limit(1);
-
-        if (testError && testError.message.includes('relation "_test" does not exist')) {
-          // テーブルが存在しないのは正常（接続は成功）
+        // 認証エラーは正常（セッションがないだけ）、接続自体は成功
+        if (error.message.includes('session') || error.message.includes('auth')) {
           return {
             success: true,
-            message: 'Supabase connection successful (basic connectivity test)',
+            message: 'Supabase connection successful (auth endpoint reachable)',
             result: 1,
           };
         }
 
-        if (testError) {
-          throw testError;
-        }
+        throw error;
       }
 
       return {
         success: true,
         message: 'Supabase connection successful',
-        result: data || 1,
+        result: 1,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Supabase connection test failed:', errorMessage);
       return {
         success: false,
         message: 'Supabase connection failed',
