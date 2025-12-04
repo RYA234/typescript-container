@@ -249,6 +249,24 @@ aws ecs describe-tasks \
 
 3. **注意**: `.env` ファイルは `.gitignore` に含まれており、Gitにコミットされません。機密情報を含むため、絶対にリポジトリに含めないでください。
 
+#### Supabaseの設定
+
+Supabase統合を使用する場合：
+
+1. [Supabase](https://supabase.com/)でプロジェクトを作成
+2. プロジェクトの設定から以下を取得：
+   - **Project URL**: Settings > API > Project URL
+   - **Anon Key**: Settings > API > Project API keys > anon public
+3. `.env`ファイルに設定：
+   ```bash
+   SUPABASE_URL=https://your-project-id.supabase.co
+   SUPABASE_ANON_KEY=your-anon-key-here
+   ```
+4. 接続テスト：
+   ```bash
+   curl http://localhost:3000/node/supabase/test
+   ```
+
 ### Docker Compose で実行
 
 ```bash
