@@ -1,0 +1,25 @@
+name: 📚 Documentation
+description: Improve or add documentation
+title: "[DOC] "
+labels: ["documentation", "priority:low"]
+body:
+  - type: dropdown
+    id: doc_type
+    attributes:
+      label: Documentation Type
+      options:
+        - API Documentation
+        - User Guide
+        - README
+        - Code Comments
+        - Other
+    validations:
+      required: true
+      
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What documentation needs to be created or updated?
+    validations:
+      required: true

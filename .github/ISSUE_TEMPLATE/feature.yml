@@ -1,0 +1,84 @@
+name: 🚀 Feature Request
+description: Propose a new feature or enhancement
+title: "[FEATURE] "
+labels: ["enhancement", "priority:medium"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this feature request!
+        
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: What category does this feature belong to?
+      options:
+        - RAG / AI
+        - UX / Frontend
+        - Sample Features
+        - Chatbot
+        - Infrastructure
+        - Documentation
+        - Testing
+        - Other
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature?
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+      
+  - type: textarea
+    id: overview
+    attributes:
+      label: Overview
+      description: Brief description of the feature
+      placeholder: What does this feature do?
+    validations:
+      required: true
+      
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why do we need this feature?
+      placeholder: What problem does it solve?
+    validations:
+      required: true
+      
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Implementation Tasks
+      description: List of tasks to complete this feature
+      value: |
+        - [ ] Design architecture
+        - [ ] Implement Service layer
+        - [ ] Implement Router/Controller
+        - [ ] Create Views (HTML/CSS)
+        - [ ] Write Jest tests
+        - [ ] Write E2E tests
+        - [ ] Update documentation
+    validations:
+      required: true
+      
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: What needs to be done for this to be considered complete?
+      placeholder: |
+        - [ ] Feature works as expected
+        - [ ] Test coverage 80%+
+        - [ ] Deployed to production
+    validations:
+      required: true

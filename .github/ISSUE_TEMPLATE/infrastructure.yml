@@ -1,0 +1,24 @@
+name: 🏗️ Infrastructure
+description: Infrastructure, deployment, or DevOps related
+title: "[INFRA] "
+labels: ["deployment", "priority:medium"]
+body:
+  - type: dropdown
+    id: infra_type
+    attributes:
+      label: Infrastructure Type
+      options:
+        - AWS (ECS, ECR, ALB)
+        - Docker
+        - CI/CD (GitHub Actions)
+        - Monitoring
+        - Other
+    validations:
+      required: true
+      
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+    validations:
+      required: true
