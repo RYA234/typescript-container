@@ -3,13 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TypeScript Container - Project Index</title>
+  <title>TypeScript Container</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -17,137 +13,73 @@
       color: #333;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       padding: 20px;
     }
 
     .container {
       background: white;
       border-radius: 12px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-      max-width: 800px;
-      width: 100%;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      max-width: 1000px;
+      margin: 0 auto;
       padding: 40px;
     }
 
-    h1 {
-      color: #667eea;
-      margin-bottom: 10px;
-      font-size: 2.5rem;
+    h1 { color: #667eea; font-size: 2.5rem; margin-bottom: 8px; }
+    .subtitle { color: #666; margin-bottom: 30px; font-size: 1.1rem; }
+
+    .tech-stack { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; }
+    .tech-tag {
+      background: #667eea; color: white;
+      padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 500;
     }
 
-    .subtitle {
-      color: #666;
-      margin-bottom: 30px;
-      font-size: 1.1rem;
+    .section-title {
+      font-size: 1.3rem; font-weight: 700; margin: 30px 0 12px;
+      border-bottom: 2px solid #667eea; padding-bottom: 6px;
     }
 
-    .section {
-      margin-bottom: 30px;
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 24px;
     }
 
-    .section h2 {
-      color: #333;
-      margin-bottom: 15px;
-      font-size: 1.5rem;
-      border-bottom: 2px solid #667eea;
-      padding-bottom: 8px;
-    }
-
-    .feature-list {
-      list-style: none;
-    }
-
-    .feature-item {
-      margin-bottom: 12px;
-    }
-
-    .feature-link {
-      display: block;
-      padding: 15px 20px;
+    .feature-item a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
       background: #f7f7f7;
       border-radius: 8px;
       text-decoration: none;
       color: #333;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       border-left: 4px solid #667eea;
-    }
-
-    .feature-link:hover {
-      background: #667eea;
-      color: white;
-      transform: translateX(5px);
-    }
-
-    .feature-name {
-      font-weight: 600;
-      font-size: 1.1rem;
-      margin-bottom: 5px;
-    }
-
-    .feature-desc {
       font-size: 0.9rem;
-      opacity: 0.8;
     }
 
-    .status {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin-left: 10px;
-    }
+    .feature-item a:hover { background: #667eea; color: white; transform: translateX(4px); }
+    .feature-item a.todo { border-left-color: #ccc; color: #333; }
+    .feature-item a.todo:hover { background: #f0f0f0; color: #999; transform: none; }
 
-    .status.active {
-      background: #d4edda;
-      color: #155724;
+    .badge {
+      font-size: 0.7rem; padding: 2px 7px; border-radius: 10px;
+      font-weight: 600; white-space: nowrap; margin-left: auto;
     }
+    .badge.level-初級 { background: #d4edda; color: #155724; }
+    .badge.level-中級 { background: #fff3cd; color: #856404; }
+    .badge.level-上級 { background: #f8d7da; color: #721c24; }
 
-    .status.planned {
-      background: #fff3cd;
-      color: #856404;
-    }
-
-    .tech-stack {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .tech-tag {
-      background: #667eea;
-      color: white;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      font-weight: 500;
-    }
+    .legend { font-size: 0.8rem; color: #999; margin-top: 8px; }
 
     footer {
-      margin-top: 30px;
-      padding-top: 20px;
-      border-top: 1px solid #ddd;
-      text-align: center;
-      color: #666;
-      font-size: 0.9rem;
+      margin-top: 30px; padding-top: 20px;
+      border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 0.9rem;
     }
-
-    .footer-links {
-      margin-top: 10px;
-    }
-
-    .footer-links a {
-      color: #667eea;
-      text-decoration: none;
-      margin: 0 10px;
-    }
-
-    .footer-links a:hover {
-      text-decoration: underline;
-    }
+    footer a { color: #667eea; text-decoration: none; margin: 0 10px; }
+    footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -155,74 +87,65 @@
     <h1>TypeScript Container</h1>
     <p class="subtitle">Feature-based Node.js/Express.js Application on AWS ECS</p>
 
-    <div class="section">
-      <h2>技術スタック</h2>
-      <div class="tech-stack">
-        <span class="tech-tag">TypeScript</span>
-        <span class="tech-tag">Express.js</span>
-        <span class="tech-tag">AWS ECS Fargate</span>
-        <span class="tech-tag">Jest</span>
-        <span class="tech-tag">Playwright</span>
-        <span class="tech-tag">Docker</span>
-      </div>
+    <div class="tech-stack">
+      <span class="tech-tag">TypeScript</span>
+      <span class="tech-tag">Express.js</span>
+      <span class="tech-tag">AWS ECS Fargate</span>
+      <span class="tech-tag">Jest</span>
+      <span class="tech-tag">Playwright</span>
+      <span class="tech-tag">Docker</span>
     </div>
 
-    <div class="section">
-      <h2>機能一覧</h2>
-      <ul class="feature-list">
-        <li class="feature-item">
-          <a href="/node/chat" class="feature-link">
-            <div class="feature-name">
-              Gemini AI Chatbot
-              <span class="status active">稼働中</span>
-            </div>
-            <div class="feature-desc">
-              Gemini APIを使用したAIチャットボット
-            </div>
-          </a>
-        </li>
-        <li class="feature-item">
-          <a href="/node/health" class="feature-link">
-            <div class="feature-name">
-              Sample / Health Check
-              <span class="status active">稼働中</span>
-            </div>
-            <div class="feature-desc">
-              アプリケーションのヘルスチェックと設定状態の確認
-            </div>
-          </a>
-        </li>
-        <li class="feature-item">
-          <a href="#" class="feature-link" onclick="alert('RAG機能は開発予定です'); return false;">
-            <div class="feature-name">
-              RAG (Retrieval-Augmented Generation)
-              <span class="status planned">開発予定</span>
-            </div>
-            <div class="feature-desc">
-              検索拡張生成機能 - Gemini API と LangChain を活用
-            </div>
-          </a>
-        </li>
-        <li class="feature-item">
-          <a href="#" class="feature-link" onclick="alert('UX機能は開発予定です'); return false;">
-            <div class="feature-name">
-              UX (User Experience)
-              <span class="status planned">開発予定</span>
-            </div>
-            <div class="feature-desc">
-              ユーザー体験関連機能 - Supabase を活用
-            </div>
-          </a>
-        </li>
-      </ul>
+    <div class="section-title">📦 RAG編</div>
+    <div class="grid">
+      <div class="feature-item"><a href="/node/rag/company-rules"><span>✅</span> 就業規則Q&A <span class="badge level-初級">初級</span></a></div>
+      <div class="feature-item"><a href="/node/rag/product-catalog" class="todo"><span>❌</span> 商品カタログ検索 <span class="badge level-初級">初級</span></a></div>
+      <div class="feature-item"><a href="/node/rag/faq" class="todo"><span>❌</span> FAQ自動回答 <span class="badge level-初級">初級</span></a></div>
+      <div class="feature-item"><a href="/node/rag/glossary" class="todo"><span>❌</span> 社内用語集検索 <span class="badge level-初級">初級</span></a></div>
+      <div class="feature-item"><a href="/node/rag/recipe" class="todo"><span>❌</span> 料理レシピ検索 <span class="badge level-初級">初級</span></a></div>
+      <div class="feature-item"><a href="/node/rag/multi-doc" class="todo"><span>❌</span> 複数ドキュメント横断検索 <span class="badge level-中級">中級</span></a></div>
+      <div class="feature-item"><a href="/node/rag/category-filter" class="todo"><span>❌</span> カテゴリ別フィルタリング <span class="badge level-中級">中級</span></a></div>
+      <div class="feature-item"><a href="/node/rag/date-filter" class="todo"><span>❌</span> 日付範囲フィルタリング <span class="badge level-中級">中級</span></a></div>
+      <div class="feature-item"><a href="/node/rag/pdf" class="todo"><span>❌</span> PDFドキュメント取り込み <span class="badge level-中級">中級</span></a></div>
+      <div class="feature-item"><a href="/node/rag/chat-history" class="todo"><span>❌</span> 会話履歴検索 <span class="badge level-中級">中級</span></a></div>
+      <div class="feature-item"><a href="/node/rag/agent" class="todo"><span>❌</span> RAG + エージェント連携 <span class="badge level-上級">上級</span></a></div>
+      <div class="feature-item"><a href="/node/rag/score" class="todo"><span>❌</span> 根拠スコア表示 <span class="badge level-上級">上級</span></a></div>
+      <div class="feature-item"><a href="/node/rag/eval" class="todo"><span>❌</span> LangSmith + Ragas評価 <span class="badge level-上級">上級</span></a></div>
+      <div class="feature-item"><a href="/node/rag/hybrid" class="todo"><span>❌</span> ハイブリッド検索 <span class="badge level-上級">上級</span></a></div>
+      <div class="feature-item"><a href="/node/rag/multimodal" class="todo"><span>❌</span> マルチモーダルRAG <span class="badge level-上級">上級</span></a></div>
     </div>
+
+    <div class="section-title">🤖 AIエージェント編</div>
+    <div class="grid">
+      <div class="feature-item"><a href="/node/agent/simple" class="todo"><span>❌</span> 天気・計算・時刻エージェント <span class="badge level-初級">初級</span></a></div>
+      <div class="feature-item"><a href="/node/agent/inventory" class="todo"><span>❌</span> 在庫確認エージェント <span class="badge level-初級">初級</span></a></div>
+      <div class="feature-item"><a href="/node/agent/order-status" class="todo"><span>❌</span> 注文ステータス確認エージェント <span class="badge level-初級">初級</span></a></div>
+      <div class="feature-item"><a href="/node/agent/unit-convert" class="todo"><span>❌</span> 単位変換エージェント <span class="badge level-初級">初級</span></a></div>
+      <div class="feature-item"><a href="/node/agent/calendar" class="todo"><span>❌</span> カレンダー確認エージェント <span class="badge level-初級">初級</span></a></div>
+      <div class="feature-item"><a href="/node/agent/credit-check" class="todo"><span>❌</span> 与信チェックエージェント <span class="badge level-中級">中級</span></a></div>
+      <div class="feature-item"><a href="/node/agent/estimate" class="todo"><span>❌</span> 見積もり作成エージェント <span class="badge level-中級">中級</span></a></div>
+      <div class="feature-item"><a href="/node/agent/attendance" class="todo"><span>❌</span> 勤怠管理エージェント <span class="badge level-中級">中級</span></a></div>
+      <div class="feature-item"><a href="/node/agent/inquiry" class="todo"><span>❌</span> 問い合わせ振り分けエージェント <span class="badge level-中級">中級</span></a></div>
+      <div class="feature-item"><a href="/node/agent/aggregate" class="todo"><span>❌</span> データ集計エージェント <span class="badge level-中級">中級</span></a></div>
+      <div class="feature-item"><a href="/node/rag/agent" class="todo"><span>❌</span> RAG + エージェント連携 <span class="badge level-上級">上級</span></a></div>
+      <div class="feature-item"><a href="/node/agent/langgraph" class="todo"><span>❌</span> LangGraphエージェント <span class="badge level-上級">上級</span></a></div>
+      <div class="feature-item"><a href="/node/agent/research" class="todo"><span>❌</span> 自律リサーチエージェント <span class="badge level-上級">上級</span></a></div>
+      <div class="feature-item"><a href="/node/agent/multi" class="todo"><span>❌</span> マルチエージェント <span class="badge level-上級">上級</span></a></div>
+      <div class="feature-item"><a href="/node/agent/credit-check-dotnet" class="todo"><span>❌</span> 与信チェック + dotnet連携 <span class="badge level-上級">上級</span></a></div>
+    </div>
+
+    <div class="section-title">🔧 その他</div>
+    <div class="grid">
+      <div class="feature-item"><a href="/node/chat"><span>✅</span> Gemini AI Chatbot</a></div>
+      <div class="feature-item"><a href="/node/health"><span>✅</span> Sample / Health Check</a></div>
+    </div>
+
+    <p class="legend">凡例: ✅ 実装済み　❌ 未実装</p>
 
     <footer>
       <p>Architecture: Feature-based | Pattern: Router/Controller/Service</p>
-      <div class="footer-links">
-        <a href="https://github.com/RYA234/typescript-container" target="_blank">GitHub Repository</a>
-        <a href="/node/health" target="_blank">API Health Check</a>
-      </div>
+      <a href="https://github.com/RYA234/typescript-container" target="_blank">GitHub</a>
+      <a href="/node/health">Health Check</a>
     </footer>
   </div>
 </body>
