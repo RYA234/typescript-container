@@ -1,12 +1,40 @@
 import { Router, Request, Response } from 'express';
 import { placeholderHtml } from '../shared/placeholder';
+import { RagController } from './company-rules/controller';
+import path from 'path';
+import rateLimit from 'express-rate-limit';
+
+const ragReadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'TOO_MANY_REQUESTS', message: 'リクエストが多すぎます。1分後に再試行してください。' },
+});
 
 const router = Router();
+const ragController = new RagController();
 
 const placeholder = (name: string) => (_req: Request, res: Response) => {
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.status(200).send(placeholderHtml(name));
 };
+
+// #53 就業規則Q&A
+const isProduction = process.env.NODE_ENV === 'production';
+
+router.get('/company-rules', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'company-rules', 'views', 'company-rules.html'));
+});
+router.get('/company-rules/config', (_req: Request, res: Response) => {
+  res.json({ writeEnabled: !isProduction });
+});
+if (!isProduction) {
+  router.post('/company-rules/ingest', ragController.ingest);
+  router.delete('/company-rules/documents', ragController.deleteDocuments);
+}
+router.get('/company-rules/search', ragReadLimiter, ragController.search);
+router.post('/company-rules/query', ragReadLimiter, ragController.query);
 
 router.get('/product-catalog', placeholder('商品カタログ検索'));
 router.get('/faq', placeholder('FAQ自動回答'));
