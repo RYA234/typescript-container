@@ -3,6 +3,7 @@ import { placeholderHtml } from '../shared/placeholder';
 import basicAgentRouter from './basic/router';
 import inventoryAgentRouter from './inventory/router';
 import orderStatusRouter from './order-status/router';
+import unitConvertRouter from './unit-convert/router';
 import path from 'path';
 
 const router = Router();
@@ -27,7 +28,11 @@ router.get('/order-status', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'order-status', 'views', 'order-status-agent.html'));
 });
 router.use('/order-status', orderStatusRouter);
-router.get('/unit-convert', placeholder('単位変換エージェント'));
+// #71 単位変換エージェント
+router.get('/unit-convert', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'unit-convert', 'views', 'unit-convert-agent.html'));
+});
+router.use('/unit-convert', unitConvertRouter);
 router.get('/calendar', placeholder('カレンダー確認エージェント'));
 router.get('/credit-check', placeholder('与信チェックエージェント'));
 router.get('/estimate', placeholder('見積もり作成エージェント'));

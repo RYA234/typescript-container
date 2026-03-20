@@ -7,3 +7,4 @@ export * from './rag';
 export * from './agent-basic';
 export * from './agent-inventory';
 export * from './agent-order-status';
+export * from './agent-unit-convert';

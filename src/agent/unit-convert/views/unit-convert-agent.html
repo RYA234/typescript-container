@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>単位変換エージェント</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    .header-links {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .header-links a {
+      font-size: 0.85rem;
+      color: #f7971e;
+      text-decoration: none;
+      padding: 4px 10px;
+      border: 1px solid #f7971e;
+      border-radius: 4px;
+    }
+    .header-links a:hover { background: #f7971e; color: white; }
+
+    h1 { color: #f7971e; font-size: 2rem; margin-bottom: 8px; }
+    .subtitle { color: #666; margin-bottom: 24px; }
+
+    .units-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .unit-card {
+      background: #fff8e1;
+      border: 1px solid #ffd200;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+    .unit-card h3 { font-size: 0.85rem; color: #f7971e; margin-bottom: 6px; }
+    .unit-card p { font-size: 0.8rem; color: #666; line-height: 1.8; }
+
+    .examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .example-btn {
+      background: #fff8e1;
+      border: 1px solid #f7971e;
+      color: #f7971e;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .example-btn:hover { background: #f7971e; color: white; }
+
+    .input-area {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 10px 14px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    input[type="text"]:focus { outline: none; border-color: #f7971e; }
+    button.send-btn {
+      background: #f7971e;
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.send-btn:hover { background: #e8860d; }
+    button.send-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    .result { display: none; }
+    .tool-log {
+      background: #f8f8f8;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .tool-log h3 { font-size: 0.85rem; color: #999; margin-bottom: 8px; }
+    .tool-entry {
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 4px;
+    }
+    .tool-name { color: #f7971e; font-weight: 600; }
+
+    .answer-box {
+      background: #fff8e1;
+      border-left: 4px solid #f7971e;
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+    }
+    .answer-box p { white-space: pre-wrap; }
+    .loading { color: #999; font-style: italic; }
+    .error-msg { color: #dc3545; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-links">
+      <a href="/">← Back to Home</a>
+      <a href="https://github.com/RYA234/typescript-container/issues/71" target="_blank">GitHub Source #71</a>
+      <a href="https://github.com/RYA234/typescript-container/blob/main/.github/docs/features/agent/04-unit-convert/external-design.md" target="_blank">設計書</a>
+    </div>
+
+    <h1>単位変換エージェント</h1>
+    <p class="subtitle">Gemini Function Calling を使って距離・重量・温度・容量を自然言語で変換できます</p>
+
+    <div class="units-grid">
+      <div class="unit-card">
+        <h3>距離</h3>
+        <p>km ↔ mile<br>m ↔ ft<br>km ↔ m</p>
+      </div>
+      <div class="unit-card">
+        <h3>重量</h3>
+        <p>kg ↔ lb<br>g ↔ oz<br>kg ↔ g</p>
+      </div>
+      <div class="unit-card">
+        <h3>温度</h3>
+        <p>°C ↔ °F<br>°C ↔ K<br>°F ↔ K</p>
+      </div>
+      <div class="unit-card">
+        <h3>容量</h3>
+        <p>L ↔ gallon<br>L ↔ ml<br>ml ↔ gallon</p>
+      </div>
+    </div>
+
+    <div class="examples">
+      <button class="example-btn" onclick="setExample('100kmは何マイルですか？')">100km → mile</button>
+      <button class="example-btn" onclick="setExample('体重70kgは何ポンド？')">70kg → lb</button>
+      <button class="example-btn" onclick="setExample('体温36.5度は華氏で何度？')">36.5°C → °F</button>
+      <button class="example-btn" onclick="setExample('2リットルは何ガロン？')">2L → gallon</button>
+      <button class="example-btn" onclick="setExample('5フィートは何メートル？')">5ft → m</button>
+    </div>
+
+    <div class="input-area">
+      <input type="text" id="messageInput" placeholder="変換について質問してください..." />
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">送信する</button>
+    </div>
+
+    <div class="result" id="result">
+      <div class="tool-log" id="toolLog" style="display:none">
+        <h3>🔧 ツール呼び出しログ</h3>
+        <div id="toolEntries"></div>
+      </div>
+      <div class="answer-box">
+        <p id="answerText"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setExample(text) {
+      document.getElementById('messageInput').value = text;
+      document.getElementById('messageInput').focus();
+    }
+
+    document.getElementById('messageInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value.trim();
+      if (!message) return;
+
+      const sendBtn = document.getElementById('sendBtn');
+      const result = document.getElementById('result');
+      const answerText = document.getElementById('answerText');
+      const toolLog = document.getElementById('toolLog');
+      const toolEntries = document.getElementById('toolEntries');
+
+      sendBtn.disabled = true;
+      result.style.display = 'block';
+      toolLog.style.display = 'none';
+      toolEntries.innerHTML = '';
+      answerText.textContent = '変換中...';
+      answerText.className = 'loading';
+
+      try {
+        const res = await fetch('/node/agent/unit-convert/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          answerText.textContent = data.message || 'エラーが発生しました';
+          answerText.className = 'error-msg';
+          return;
+        }
+
+        if (data.toolCalls && data.toolCalls.length > 0) {
+          toolLog.style.display = 'block';
+          data.toolCalls.forEach((tool, i) => {
+            const entry = document.createElement('div');
+            entry.className = 'tool-entry';
+            entry.innerHTML = `[${i + 1}] <span class="tool-name">${tool.name}</span>(${JSON.stringify(tool.args)}) → "${tool.result}"`;
+            toolEntries.appendChild(entry);
+          });
+        }
+
+        answerText.textContent = data.reply;
+        answerText.className = '';
+      } catch {
+        answerText.textContent = 'ネットワークエラーが発生しました';
+        answerText.className = 'error-msg';
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
