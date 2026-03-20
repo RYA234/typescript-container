@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>カレンダー確認エージェント</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    .header-links {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .header-links a {
+      font-size: 0.85rem;
+      color: #38a169;
+      text-decoration: none;
+      padding: 4px 10px;
+      border: 1px solid #38a169;
+      border-radius: 4px;
+    }
+    .header-links a:hover { background: #38a169; color: white; }
+
+    h1 { color: #38a169; font-size: 2rem; margin-bottom: 8px; }
+    .subtitle { color: #666; margin-bottom: 24px; }
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .tool-card {
+      background: #f0fff4;
+      border: 1px solid #9ae6b4;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+    .tool-card h3 { font-size: 0.85rem; color: #38a169; margin-bottom: 4px; }
+    .tool-card p { font-size: 0.8rem; color: #666; }
+
+    .examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .example-btn {
+      background: #f0fff4;
+      border: 1px solid #38a169;
+      color: #38a169;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .example-btn:hover { background: #38a169; color: white; }
+
+    .input-area {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 10px 14px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    input[type="text"]:focus { outline: none; border-color: #38a169; }
+    button.send-btn {
+      background: #38a169;
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.send-btn:hover { background: #2f855a; }
+    button.send-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    .result { display: none; }
+    .tool-log {
+      background: #f8f8f8;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .tool-log h3 { font-size: 0.85rem; color: #999; margin-bottom: 8px; }
+    .tool-entry {
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 4px;
+    }
+    .tool-name { color: #38a169; font-weight: 600; }
+
+    .answer-box {
+      background: #f0fff4;
+      border-left: 4px solid #38a169;
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+    }
+    .answer-box p { white-space: pre-wrap; }
+    .loading { color: #999; font-style: italic; }
+    .error-msg { color: #dc3545; }
+
+    .note { font-size: 0.8rem; color: #999; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-links">
+      <a href="/">← Back to Home</a>
+      <a href="https://github.com/RYA234/typescript-container/issues/72" target="_blank">GitHub Source #72</a>
+      <a href="https://github.com/RYA234/typescript-container/blob/main/.github/docs/features/agent/05-calendar/external-design.md" target="_blank">設計書</a>
+    </div>
+
+    <h1>カレンダー確認エージェント</h1>
+    <p class="subtitle">Gemini Function Calling を使って曜日・祝日判定・営業日数を自然言語で確認できます</p>
+
+    <div class="tools-grid">
+      <div class="tool-card">
+        <h3>get_day_of_week</h3>
+        <p>日付から曜日を取得</p>
+      </div>
+      <div class="tool-card">
+        <h3>is_holiday</h3>
+        <p>祝日かどうかを判定</p>
+      </div>
+      <div class="tool-card">
+        <h3>calc_business_days</h3>
+        <p>期間内の営業日数を計算</p>
+      </div>
+    </div>
+
+    <div class="examples">
+      <button class="example-btn" onclick="setExample('2025-01-01は何曜日で祝日ですか？')">2025-01-01は？</button>
+      <button class="example-btn" onclick="setExample('2025-05-03から2025-05-05は祝日ですか？')">GW祝日確認</button>
+      <button class="example-btn" onclick="setExample('2025-01-01から2025-01-31の営業日数は？')">1月の営業日数</button>
+      <button class="example-btn" onclick="setExample('2025-12-25は何曜日？')">2025-12-25</button>
+    </div>
+
+    <div class="input-area">
+      <input type="text" id="messageInput" placeholder="日付について質問してください..." />
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">送信する</button>
+    </div>
+
+    <div class="result" id="result">
+      <div class="tool-log" id="toolLog" style="display:none">
+        <h3>🔧 ツール呼び出しログ</h3>
+        <div id="toolEntries"></div>
+      </div>
+      <div class="answer-box">
+        <p id="answerText"></p>
+      </div>
+    </div>
+    <p class="note">※ 祝日データは2025年の日本の祝日のみ対応</p>
+  </div>
+
+  <script>
+    function setExample(text) {
+      document.getElementById('messageInput').value = text;
+      document.getElementById('messageInput').focus();
+    }
+
+    document.getElementById('messageInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value.trim();
+      if (!message) return;
+
+      const sendBtn = document.getElementById('sendBtn');
+      const result = document.getElementById('result');
+      const answerText = document.getElementById('answerText');
+      const toolLog = document.getElementById('toolLog');
+      const toolEntries = document.getElementById('toolEntries');
+
+      sendBtn.disabled = true;
+      result.style.display = 'block';
+      toolLog.style.display = 'none';
+      toolEntries.innerHTML = '';
+      answerText.textContent = '確認中...';
+      answerText.className = 'loading';
+
+      try {
+        const res = await fetch('/node/agent/calendar/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          answerText.textContent = data.message || 'エラーが発生しました';
+          answerText.className = 'error-msg';
+          return;
+        }
+
+        if (data.toolCalls && data.toolCalls.length > 0) {
+          toolLog.style.display = 'block';
+          data.toolCalls.forEach((tool, i) => {
+            const entry = document.createElement('div');
+            entry.className = 'tool-entry';
+            entry.innerHTML = `[${i + 1}] <span class="tool-name">${tool.name}</span>(${JSON.stringify(tool.args)}) → "${tool.result}"`;
+            toolEntries.appendChild(entry);
+          });
+        }
+
+        answerText.textContent = data.reply;
+        answerText.className = '';
+      } catch {
+        answerText.textContent = 'ネットワークエラーが発生しました';
+        answerText.className = 'error-msg';
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
