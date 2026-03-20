@@ -7,3 +7,4 @@ npm-debug.log*
 playwright-report/
 test-results/
 start-local.bat
+.claude/settings.local.json
