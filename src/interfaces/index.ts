@@ -6,3 +6,4 @@ export * from './supabase';
 export * from './rag';
 export * from './agent-basic';
 export * from './agent-inventory';
+export * from './agent-order-status';

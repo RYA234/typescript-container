@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>注文ステータス確認エージェント</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    .header-links {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .header-links a {
+      font-size: 0.85rem;
+      color: #4facfe;
+      text-decoration: none;
+      padding: 4px 10px;
+      border: 1px solid #4facfe;
+      border-radius: 4px;
+    }
+    .header-links a:hover { background: #4facfe; color: white; }
+
+    h1 { color: #4facfe; font-size: 2rem; margin-bottom: 8px; }
+    .subtitle { color: #666; margin-bottom: 24px; }
+
+    .orders-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+    }
+    .orders-table th {
+      background: #4facfe;
+      color: white;
+      padding: 8px 12px;
+      text-align: left;
+    }
+    .orders-table td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+    .orders-table tr:hover td { background: #f0f8ff; }
+
+    .status-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .status-配送中 { background: #d1ecf1; color: #0c5460; }
+    .status-処理中 { background: #fff3cd; color: #856404; }
+    .status-配送完了 { background: #d4edda; color: #155724; }
+    .status-キャンセル { background: #f8d7da; color: #721c24; }
+    .status-注文受付 { background: #e2e3e5; color: #383d41; }
+
+    .order-ids {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .order-btn {
+      background: #f0f8ff;
+      border: 1px solid #4facfe;
+      color: #4facfe;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .order-btn:hover { background: #4facfe; color: white; }
+
+    .input-area {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 10px 14px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    input[type="text"]:focus { outline: none; border-color: #4facfe; }
+    button.send-btn {
+      background: #4facfe;
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.send-btn:hover { background: #3a9fed; }
+    button.send-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    .result { display: none; }
+    .tool-log {
+      background: #f8f8f8;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .tool-log h3 { font-size: 0.85rem; color: #999; margin-bottom: 8px; }
+    .tool-entry {
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 4px;
+    }
+    .tool-name { color: #4facfe; font-weight: 600; }
+
+    .answer-box {
+      background: #f0f8ff;
+      border-left: 4px solid #4facfe;
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+    }
+    .answer-box p { white-space: pre-wrap; }
+    .loading { color: #999; font-style: italic; }
+    .error-msg { color: #dc3545; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-links">
+      <a href="/">← Back to Home</a>
+      <a href="https://github.com/RYA234/typescript-container/issues/70" target="_blank">GitHub Source #70</a>
+      <a href="https://github.com/RYA234/typescript-container/blob/main/.github/docs/features/agent/03-order-status/external-design.md" target="_blank">設計書</a>
+    </div>
+
+    <h1>注文ステータス確認エージェント</h1>
+    <p class="subtitle">Gemini Function Calling を使って注文IDから配送状況・予定日を自然言語で確認できます</p>
+
+    <table class="orders-table">
+      <thead>
+        <tr><th>注文ID</th><th>ステータス</th><th>配送予定日</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ORD-001</td><td><span class="status-badge status-配送中">配送中</span></td><td>2025-12-25</td></tr>
+        <tr><td>ORD-002</td><td><span class="status-badge status-処理中">処理中</span></td><td>2025-12-28</td></tr>
+        <tr><td>ORD-003</td><td><span class="status-badge status-配送完了">配送完了</span></td><td>2025-12-20</td></tr>
+        <tr><td>ORD-004</td><td><span class="status-badge status-キャンセル">キャンセル</span></td><td>-</td></tr>
+        <tr><td>ORD-005</td><td><span class="status-badge status-注文受付">注文受付</span></td><td>2025-12-30</td></tr>
+      </tbody>
+    </table>
+
+    <div class="order-ids">
+      <button class="order-btn" onclick="setExample('注文 ORD-001 の状況を教えてください')">ORD-001</button>
+      <button class="order-btn" onclick="setExample('ORD-002 はいつ届きますか？')">ORD-002</button>
+      <button class="order-btn" onclick="setExample('ORD-003 の配送は完了していますか？')">ORD-003</button>
+      <button class="order-btn" onclick="setExample('ORD-004 の状況と配送予定日を教えてください')">ORD-004</button>
+      <button class="order-btn" onclick="setExample('ORD-005 はいつ届きますか？')">ORD-005</button>
+    </div>
+
+    <div class="input-area">
+      <input type="text" id="messageInput" placeholder="注文について質問してください..." />
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">送信する</button>
+    </div>
+
+    <div class="result" id="result">
+      <div class="tool-log" id="toolLog" style="display:none">
+        <h3>🔧 ツール呼び出しログ</h3>
+        <div id="toolEntries"></div>
+      </div>
+      <div class="answer-box">
+        <p id="answerText"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setExample(text) {
+      document.getElementById('messageInput').value = text;
+      document.getElementById('messageInput').focus();
+    }
+
+    document.getElementById('messageInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value.trim();
+      if (!message) return;
+
+      const sendBtn = document.getElementById('sendBtn');
+      const result = document.getElementById('result');
+      const answerText = document.getElementById('answerText');
+      const toolLog = document.getElementById('toolLog');
+      const toolEntries = document.getElementById('toolEntries');
+
+      sendBtn.disabled = true;
+      result.style.display = 'block';
+      toolLog.style.display = 'none';
+      toolEntries.innerHTML = '';
+      answerText.textContent = '確認中...';
+      answerText.className = 'loading';
+
+      try {
+        const res = await fetch('/node/agent/order-status/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          answerText.textContent = data.message || 'エラーが発生しました';
+          answerText.className = 'error-msg';
+          return;
+        }
+
+        if (data.toolCalls && data.toolCalls.length > 0) {
+          toolLog.style.display = 'block';
+          data.toolCalls.forEach((tool, i) => {
+            const entry = document.createElement('div');
+            entry.className = 'tool-entry';
+            entry.innerHTML = `[${i + 1}] <span class="tool-name">${tool.name}</span>(${JSON.stringify(tool.args)}) → "${tool.result}"`;
+            toolEntries.appendChild(entry);
+          });
+        }
+
+        answerText.textContent = data.reply;
+        answerText.className = '';
+      } catch {
+        answerText.textContent = 'ネットワークエラーが発生しました';
+        answerText.className = 'error-msg';
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
