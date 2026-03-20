@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { placeholderHtml } from '../shared/placeholder';
 import basicAgentRouter from './basic/router';
+import inventoryAgentRouter from './inventory/router';
 import path from 'path';
 
 const router = Router();
@@ -15,7 +16,11 @@ router.get('/simple', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'basic', 'views', 'basic-agent.html'));
 });
 router.use('/basic', basicAgentRouter);
-router.get('/inventory', placeholder('在庫確認エージェント'));
+// #69 在庫確認エージェント
+router.get('/inventory', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'inventory', 'views', 'inventory-agent.html'));
+});
+router.use('/inventory', inventoryAgentRouter);
 router.get('/order-status', placeholder('注文ステータス確認エージェント'));
 router.get('/unit-convert', placeholder('単位変換エージェント'));
 router.get('/calendar', placeholder('カレンダー確認エージェント'));
