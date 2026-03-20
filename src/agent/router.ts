@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { placeholderHtml } from '../shared/placeholder';
 import basicAgentRouter from './basic/router';
 import inventoryAgentRouter from './inventory/router';
+import orderStatusRouter from './order-status/router';
 import path from 'path';
 
 const router = Router();
@@ -21,7 +22,11 @@ router.get('/inventory', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'inventory', 'views', 'inventory-agent.html'));
 });
 router.use('/inventory', inventoryAgentRouter);
-router.get('/order-status', placeholder('注文ステータス確認エージェント'));
+// #70 注文ステータス確認エージェント
+router.get('/order-status', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'order-status', 'views', 'order-status-agent.html'));
+});
+router.use('/order-status', orderStatusRouter);
 router.get('/unit-convert', placeholder('単位変換エージェント'));
 router.get('/calendar', placeholder('カレンダー確認エージェント'));
 router.get('/credit-check', placeholder('与信チェックエージェント'));
