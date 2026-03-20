@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { placeholderHtml } from '../shared/placeholder';
+import basicAgentRouter from './basic/router';
+import path from 'path';
 
 const router = Router();
 
@@ -8,7 +10,11 @@ const placeholder = (name: string) => (_req: Request, res: Response) => {
   res.status(200).send(placeholderHtml(name));
 };
 
-router.get('/simple', placeholder('天気・計算・時刻エージェント'));
+// #68 天気・計算・時刻エージェント
+router.get('/simple', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'basic', 'views', 'basic-agent.html'));
+});
+router.use('/basic', basicAgentRouter);
 router.get('/inventory', placeholder('在庫確認エージェント'));
 router.get('/order-status', placeholder('注文ステータス確認エージェント'));
 router.get('/unit-convert', placeholder('単位変換エージェント'));

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>天気・計算・時刻エージェント - Agentデモ</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .page-header {
+      text-align: center;
+      color: white;
+      margin-bottom: 24px;
+    }
+
+    .page-header h1 { font-size: 1.8rem; margin-bottom: 6px; }
+    .page-header p { opacity: 0.85; font-size: 0.95rem; }
+
+    .header-links { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+
+    .back-link {
+      display: inline-block;
+      color: white;
+      text-decoration: none;
+      padding: 6px 14px;
+      border: 1px solid white;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .back-link:hover { background: white; color: #11998e; }
+
+    .gh-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: white;
+      text-decoration: none;
+      padding: 6px 14px;
+      border: 1px solid rgba(255,255,255,0.6);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+      opacity: 0.85;
+    }
+    .gh-link:hover { background: white; color: #11998e; opacity: 1; }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto 16px;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #11998e;
+      margin-bottom: 14px;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+      font-family: inherit;
+      resize: vertical;
+      transition: border-color 0.2s;
+    }
+    textarea:focus { border-color: #11998e; }
+
+    .row { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+
+    button {
+      padding: 10px 20px;
+      background: #11998e;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    button:hover:not(:disabled) { background: #0e8077; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    button.secondary {
+      background: white;
+      color: #11998e;
+      border: 2px solid #11998e;
+    }
+    button.secondary:hover:not(:disabled) { background: #f0faf9; }
+
+    .result-box {
+      margin-top: 12px;
+      padding: 12px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      min-height: 60px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #333;
+    }
+    .result-box.empty { color: #999; font-style: italic; }
+    .result-box.error { background: #fdecea; color: #c62828; }
+    .result-box.loading { color: #11998e; font-style: italic; }
+
+    .reply-box {
+      margin-top: 12px;
+      padding: 14px;
+      background: #f0faf9;
+      border-left: 3px solid #11998e;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #1a1a1a;
+    }
+
+    .tool-log {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .tool-item {
+      padding: 8px 12px;
+      background: #f9f9f9;
+      border-left: 3px solid #38ef7d;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.8rem;
+      font-family: monospace;
+      color: #333;
+    }
+    .tool-item .tool-name { color: #11998e; font-weight: 700; }
+    .tool-item .tool-result { color: #555; margin-top: 2px; }
+
+    .examples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .example-btn {
+      padding: 6px 12px;
+      background: #e8f8f5;
+      color: #11998e;
+      border: 1px solid #b2dfdb;
+      border-radius: 16px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .example-btn:hover { background: #11998e; color: white; }
+  </style>
+</head>
+<body>
+  <div style="max-width:800px; margin:0 auto;">
+    <div class="header-links">
+      <a href="/node" class="back-link">← Back to Home</a>
+      <a href="https://github.com/RYA234/typescript-container/tree/main/src/agent/basic" target="_blank" class="gh-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        Source (#68)
+      </a>
+      <a href="https://github.com/RYA234/typescript-container/blob/main/.github/docs/features/agent/01-basic/external-design.md" target="_blank" class="gh-link">設計書</a>
+    </div>
+
+    <div class="page-header">
+      <h1>天気・計算・時刻エージェント</h1>
+      <p>Agentデモ — Function Calling × Gemini AI × 3ツール</p>
+    </div>
+
+    <!-- エージェントカード -->
+    <div class="card">
+      <h2>エージェントに質問する</h2>
+      <textarea id="messageInput" rows="3" placeholder="例: 東京の天気を教えて"></textarea>
+      <div class="examples">
+        <button class="example-btn" data-msg="東京の天気を教えて">東京の天気</button>
+        <button class="example-btn" data-msg="大阪と福岡の天気を比べて">大阪と福岡の天気比較</button>
+        <button class="example-btn" data-msg="100 + 200 * 3 を計算して">100 + 200 × 3</button>
+        <button class="example-btn" data-msg="(1234 + 5678) / 4 は？">(1234 + 5678) ÷ 4</button>
+        <button class="example-btn" data-msg="今の時刻は？">今の時刻</button>
+        <button class="example-btn" data-msg="東京の天気と今の時刻を教えて">天気 + 時刻</button>
+      </div>
+      <div class="row">
+        <button id="sendBtn" style="margin-top:8px;">送信する</button>
+      </div>
+
+      <div id="replyArea" style="display:none;">
+        <div style="font-size:0.8rem;color:#666;margin-top:16px;margin-bottom:4px;">エージェント応答</div>
+        <div id="replyBox" class="reply-box"></div>
+
+        <div id="toolLogArea" style="display:none;">
+          <div style="font-size:0.8rem;color:#666;margin-top:12px;margin-bottom:4px;">ツール呼び出しログ</div>
+          <div id="toolLog" class="tool-log"></div>
+        </div>
+
+        <div id="execTime" style="font-size:0.78rem;color:#999;margin-top:8px;"></div>
+      </div>
+
+      <div id="errorBox" class="result-box error" style="display:none;"></div>
+      <div id="loadingBox" class="result-box loading" style="display:none;">エージェント処理中...</div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.example-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('messageInput').value = btn.dataset.msg;
+      });
+    });
+
+    document.getElementById('sendBtn').addEventListener('click', sendMessage);
+    document.getElementById('messageInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) sendMessage();
+    });
+
+    async function sendMessage() {
+      const message = document.getElementById('messageInput').value.trim();
+      if (!message) return;
+
+      const btn = document.getElementById('sendBtn');
+      const replyArea = document.getElementById('replyArea');
+      const errorBox = document.getElementById('errorBox');
+      const loadingBox = document.getElementById('loadingBox');
+
+      btn.disabled = true;
+      replyArea.style.display = 'none';
+      errorBox.style.display = 'none';
+      loadingBox.style.display = 'block';
+
+      const start = Date.now();
+      try {
+        const res = await fetch('/node/agent/basic/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || res.statusText);
+
+        document.getElementById('replyBox').textContent = data.reply;
+
+        const toolLogArea = document.getElementById('toolLogArea');
+        const toolLog = document.getElementById('toolLog');
+        if (data.toolCalls && data.toolCalls.length > 0) {
+          toolLog.innerHTML = data.toolCalls.map((tc, i) => `
+            <div class="tool-item">
+              <div class="tool-name">[${i + 1}] ${escHtml(tc.name)}(${escHtml(JSON.stringify(tc.args))})</div>
+              <div class="tool-result">→ "${escHtml(tc.result)}"</div>
+            </div>
+          `).join('');
+          toolLogArea.style.display = 'block';
+        } else {
+          toolLogArea.style.display = 'none';
+        }
+
+        document.getElementById('execTime').textContent = `処理時間: ${Date.now() - start}ms`;
+        replyArea.style.display = 'block';
+      } catch (e) {
+        errorBox.textContent = `エラー: ${e.message}`;
+        errorBox.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        loadingBox.style.display = 'none';
+      }
+    }
+
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  </script>
+</body>
+</html>
