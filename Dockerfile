@@ -30,7 +30,7 @@ RUN npm ci --only=production && \
 
 # ビルドステージからコンパイル済みJSをコピー
 COPY --from=builder /usr/src/app/dist ./dist
-COPY src/rag/company-rules/data ./dist/src/rag/company-rules/data
+COPY src/rag ./dist/src/rag
 
 EXPOSE 3000
 
