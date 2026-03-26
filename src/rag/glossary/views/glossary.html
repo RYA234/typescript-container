@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>社内用語集検索 - RAGデモ</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #43a047 0%, #1b5e20 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .page-header { text-align: center; color: white; margin-bottom: 24px; }
+    .page-header h1 { font-size: 1.8rem; margin-bottom: 6px; }
+    .page-header p { opacity: 0.85; font-size: 0.95rem; }
+
+    .header-links { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+
+    .back-link {
+      display: inline-block; color: white; text-decoration: none;
+      padding: 6px 14px; border: 1px solid white; border-radius: 6px;
+      font-size: 0.85rem; transition: all 0.2s;
+    }
+    .back-link:hover { background: white; color: #43a047; }
+
+    .gh-link {
+      display: inline-flex; align-items: center; gap: 5px; color: white;
+      text-decoration: none; padding: 6px 14px; border: 1px solid rgba(255,255,255,0.6);
+      border-radius: 6px; font-size: 0.85rem; transition: all 0.2s; opacity: 0.85;
+    }
+    .gh-link:hover { background: white; color: #43a047; opacity: 1; }
+
+    .card {
+      background: white; border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      padding: 20px; max-width: 800px; margin: 0 auto 16px;
+    }
+
+    .card h2 { font-size: 1rem; font-weight: 700; color: #43a047; margin-bottom: 14px; }
+
+    input[type="text"] {
+      width: 100%; padding: 10px 12px; border: 2px solid #ddd;
+      border-radius: 8px; font-size: 0.9rem; outline: none;
+      font-family: inherit; transition: border-color 0.2s;
+    }
+    input:focus { border-color: #43a047; }
+
+    input[type="number"] {
+      width: 60px; padding: 10px 12px; border: 2px solid #ddd;
+      border-radius: 8px; font-size: 0.9rem; outline: none;
+      font-family: inherit; transition: border-color 0.2s;
+    }
+
+    textarea {
+      width: 100%; padding: 10px 12px; border: 2px solid #ddd;
+      border-radius: 8px; font-size: 0.9rem; outline: none;
+      font-family: inherit; resize: vertical; transition: border-color 0.2s;
+    }
+    textarea:focus { border-color: #43a047; }
+
+    .row { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+    .label { font-size: 0.8rem; color: #666; margin-bottom: 4px; margin-top: 8px; }
+    .limit-wrap { display: flex; align-items: center; gap: 8px; }
+    .limit-wrap label { font-size: 0.85rem; color: #666; white-space: nowrap; }
+
+    button {
+      padding: 10px 20px; background: #43a047; color: white; border: none;
+      border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+      white-space: nowrap; transition: background 0.2s;
+    }
+    button:hover:not(:disabled) { background: #388e3c; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    button.danger { background: #e53935; }
+    button.danger:hover:not(:disabled) { background: #c62828; }
+
+    .result-box {
+      margin-top: 12px; padding: 12px; background: #f5f5f5;
+      border-radius: 8px; font-size: 0.85rem; min-height: 60px;
+      white-space: pre-wrap; word-break: break-word; color: #333;
+    }
+    .result-box.empty { color: #999; font-style: italic; }
+    .result-box.error { background: #fdecea; color: #c62828; }
+    .result-box.success { background: #e8f5e9; color: #2e7d32; }
+    .result-box.loading { color: #43a047; font-style: italic; }
+
+    .search-results { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+
+    .term-item {
+      padding: 14px 16px; background: #f9f9f9;
+      border-left: 4px solid #43a047; border-radius: 0 8px 8px 0;
+      font-size: 0.88rem;
+    }
+    .term-item .term-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .term-item .term-name { font-weight: 700; color: #1b5e20; font-size: 1rem; }
+    .term-item .sim { font-size: 0.78rem; color: white; background: #43a047; padding: 2px 8px; border-radius: 10px; }
+    .term-item .category { font-size: 0.75rem; color: #888; border: 1px solid #ddd; padding: 2px 8px; border-radius: 10px; }
+    .term-item .definition { color: #444; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div style="max-width:800px; margin:0 auto;">
+    <div class="header-links">
+      <a href="/node" class="back-link">← Back to Home</a>
+      <a href="https://github.com/RYA234/typescript-container/issues/56" target="_blank" class="gh-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub Issue #56
+      </a>
+      <a href="https://github.com/RYA234/typescript-container/blob/main/.github/docs/features/rag/04-glossary/external-design.md" target="_blank" class="gh-link">設計書</a>
+    </div>
+
+    <div class="page-header">
+      <h1>社内用語集検索</h1>
+      <p>RAGデモ — 略語・専門用語を意味で検索 × Gemini AI × Supabase pgvector</p>
+    </div>
+
+    <!-- 用語登録カード（開発環境のみ） -->
+    <div class="card" id="ingestCard">
+      <h2>用語データ登録</h2>
+      <div class="label">用語データ（JSON配列）</div>
+      <textarea id="ingestData" rows="6" placeholder='[
+  { "term": "YMS", "definition": "倉庫管理システム（Yard Management System）。入出庫・在庫・ロケーション管理を一元化するシステム。", "category": "システム" },
+  { "term": "稟議", "definition": "業務上の重要な決定を上位者に承認を求める手続き。社内ポータルから申請する。", "category": "業務" }
+]'></textarea>
+      <div class="row">
+        <button id="ingestBtn">登録する</button>
+        <button class="danger" id="deleteBtn">全削除</button>
+      </div>
+      <div id="ingestResult" class="result-box empty">登録結果がここに表示されます</div>
+    </div>
+
+    <!-- 用語検索カード -->
+    <div class="card">
+      <h2>用語・略語を検索してください</h2>
+      <div class="row" style="margin-top:0;">
+        <input type="text" id="searchQuery" placeholder="例: YMSって何？" style="flex:1;">
+        <div class="limit-wrap">
+          <label>件数:</label>
+          <input type="number" id="limitInput" value="5" min="1" max="10">
+        </div>
+        <button id="searchBtn">検索する</button>
+      </div>
+      <div id="searchResults" class="search-results">
+        <div class="result-box empty">検索結果がここに表示されます</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const isProduction = window.location.hostname !== 'localhost';
+    if (isProduction) {
+      document.getElementById('ingestCard').style.display = 'none';
+    }
+
+    // --- Ingest ---
+    document.getElementById('ingestBtn').addEventListener('click', async () => {
+      const raw = document.getElementById('ingestData').value.trim();
+      const resultBox = document.getElementById('ingestResult');
+      let terms;
+      try {
+        terms = JSON.parse(raw);
+        if (!Array.isArray(terms)) throw new Error('配列で入力してください');
+      } catch (e) {
+        resultBox.className = 'result-box error';
+        resultBox.textContent = `JSONパースエラー: ${e.message}`;
+        return;
+      }
+
+      const btn = document.getElementById('ingestBtn');
+      btn.disabled = true;
+      resultBox.className = 'result-box loading';
+      resultBox.textContent = '登録中...';
+
+      try {
+        const res = await fetch('/node/rag/glossary/ingest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ terms }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || res.statusText);
+        resultBox.className = 'result-box success';
+        resultBox.textContent = `✓ ${data.registeredCount}件を登録しました（${data.executionTimeMs}ms）`;
+      } catch (e) {
+        resultBox.className = 'result-box error';
+        resultBox.textContent = `エラー: ${e.message}`;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // --- Delete ---
+    document.getElementById('deleteBtn').addEventListener('click', async () => {
+      if (!confirm('全用語データを削除しますか？')) return;
+      const resultBox = document.getElementById('ingestResult');
+      try {
+        const res = await fetch('/node/rag/glossary/terms', { method: 'DELETE' });
+        const data = await res.json();
+        resultBox.className = 'result-box success';
+        resultBox.textContent = `✓ ${data.message}`;
+      } catch (e) {
+        resultBox.className = 'result-box error';
+        resultBox.textContent = `エラー: ${e.message}`;
+      }
+    });
+
+    // --- Search ---
+    document.getElementById('searchBtn').addEventListener('click', async () => {
+      const q = document.getElementById('searchQuery').value.trim();
+      const limit = document.getElementById('limitInput').value || '5';
+      const container = document.getElementById('searchResults');
+
+      if (!q) {
+        container.innerHTML = '<div class="result-box error">検索キーワードを入力してください</div>';
+        return;
+      }
+
+      const btn = document.getElementById('searchBtn');
+      btn.disabled = true;
+      container.innerHTML = '<div class="result-box loading">検索中...</div>';
+
+      try {
+        const res = await fetch(`/node/rag/glossary/search?q=${encodeURIComponent(q)}&limit=${limit}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || res.statusText);
+
+        if (data.results.length === 0) {
+          container.innerHTML = '<div class="result-box empty">該当する用語が見つかりませんでした</div>';
+        } else {
+          const items = data.results.map((r, i) => `
+            <div class="term-item">
+              <div class="term-header">
+                <span style="color:#999;font-size:0.8rem;">[${i + 1}]</span>
+                <span class="term-name">${escHtml(r.term)}</span>
+                <span class="sim">類似度 ${(r.similarity * 100).toFixed(1)}%</span>
+                ${r.category ? `<span class="category">${escHtml(r.category)}</span>` : ''}
+              </div>
+              <div class="definition">${escHtml(r.definition)}</div>
+            </div>
+          `).join('');
+          container.innerHTML = items + `<div style="font-size:0.78rem;color:#999;margin-top:4px;">処理時間: ${data.executionTimeMs}ms</div>`;
+        }
+      } catch (e) {
+        container.innerHTML = `<div class="result-box error">エラー: ${escHtml(e.message)}</div>`;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById('searchQuery').addEventListener('keypress', e => {
+      if (e.key === 'Enter') document.getElementById('searchBtn').click();
+    });
+
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  </script>
+</body>
+</html>

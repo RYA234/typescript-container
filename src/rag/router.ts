@@ -3,6 +3,7 @@ import { placeholderHtml } from '../shared/placeholder';
 import { RagController } from './company-rules/controller';
 import productRouter from './product/router';
 import faqRouter from './faq/router';
+import glossaryRouter from './glossary/router';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 
@@ -49,7 +50,11 @@ router.get('/faq', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'faq', 'views', 'faq.html'));
 });
 router.use('/faq', faqRouter);
-router.get('/glossary', placeholder('社内用語集検索'));
+// #56 社内用語集検索
+router.get('/glossary', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'glossary', 'views', 'glossary.html'));
+});
+router.use('/glossary', glossaryRouter);
 router.get('/recipe', placeholder('料理レシピ検索'));
 router.get('/multi-doc', placeholder('複数ドキュメント横断検索'));
 router.get('/category-filter', placeholder('カテゴリ別フィルタリング'));
