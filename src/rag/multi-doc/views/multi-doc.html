@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>複数ドキュメント横断検索 - RAGデモ</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #1565c0 0%, #4a148c 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .page-header { text-align: center; color: white; margin-bottom: 24px; }
+    .page-header h1 { font-size: 1.8rem; margin-bottom: 6px; }
+    .page-header p { opacity: 0.85; font-size: 0.95rem; }
+
+    .header-links { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+
+    .back-link {
+      display: inline-block; color: white; text-decoration: none;
+      padding: 6px 14px; border: 1px solid white; border-radius: 6px;
+      font-size: 0.85rem; transition: all 0.2s;
+    }
+    .back-link:hover { background: white; color: #1565c0; }
+
+    .gh-link {
+      display: inline-flex; align-items: center; gap: 5px; color: white;
+      text-decoration: none; padding: 6px 14px; border: 1px solid rgba(255,255,255,0.6);
+      border-radius: 6px; font-size: 0.85rem; transition: all 0.2s; opacity: 0.85;
+    }
+    .gh-link:hover { background: white; color: #1565c0; opacity: 1; }
+
+    .card {
+      background: white; border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      padding: 20px; max-width: 800px; margin: 0 auto 16px;
+    }
+
+    .card h2 { font-size: 1rem; font-weight: 700; color: #1565c0; margin-bottom: 14px; }
+
+    input[type="text"], select {
+      width: 100%; padding: 10px 12px; border: 2px solid #ddd;
+      border-radius: 8px; font-size: 0.9rem; outline: none;
+      font-family: inherit; transition: border-color 0.2s; background: white;
+    }
+    input:focus, select:focus { border-color: #1565c0; }
+
+    textarea {
+      width: 100%; padding: 10px 12px; border: 2px solid #ddd;
+      border-radius: 8px; font-size: 0.9rem; outline: none;
+      font-family: inherit; resize: vertical; transition: border-color 0.2s;
+    }
+    textarea:focus { border-color: #1565c0; }
+
+    .row { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+    .label { font-size: 0.8rem; color: #666; margin-bottom: 4px; margin-top: 8px; }
+
+    button {
+      padding: 10px 20px; background: #1565c0; color: white; border: none;
+      border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+      white-space: nowrap; transition: background 0.2s;
+    }
+    button:hover:not(:disabled) { background: #0d47a1; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    button.danger { background: #e53935; }
+    button.danger:hover:not(:disabled) { background: #c62828; }
+
+    .result-box {
+      margin-top: 12px; padding: 12px; background: #f5f5f5;
+      border-radius: 8px; font-size: 0.85rem; min-height: 60px;
+      white-space: pre-wrap; word-break: break-word; color: #333;
+    }
+    .result-box.empty { color: #999; font-style: italic; }
+    .result-box.error { background: #fdecea; color: #c62828; }
+    .result-box.success { background: #e8f5e9; color: #2e7d32; }
+    .result-box.loading { color: #1565c0; font-style: italic; }
+
+    .answer-box {
+      margin-top: 12px; padding: 16px; background: #e3f2fd;
+      border-left: 4px solid #1565c0; border-radius: 0 8px 8px 0;
+      font-size: 0.9rem; line-height: 1.7; color: #0d2b5e;
+    }
+
+    .sources-section { margin-top: 14px; }
+    .sources-title { font-size: 0.8rem; font-weight: 700; color: #666; margin-bottom: 8px; }
+
+    .source-item {
+      padding: 10px 14px; background: #f8f9ff;
+      border-left: 3px solid #7c4dff; border-radius: 0 6px 6px 0;
+      font-size: 0.82rem; margin-bottom: 6px;
+    }
+    .source-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .doc-type-badge {
+      font-size: 0.75rem; font-weight: 700; color: white;
+      padding: 2px 8px; border-radius: 10px;
+    }
+    .doc-type-employment_rules { background: #1565c0; }
+    .doc-type-manual { background: #2e7d32; }
+    .doc-type-minutes { background: #e65100; }
+    .doc-type-other { background: #6a1b9a; }
+    .source-title { font-weight: 600; color: #333; }
+    .sim-badge { font-size: 0.75rem; color: white; background: #7c4dff; padding: 2px 8px; border-radius: 10px; margin-left: auto; }
+    .source-content { color: #555; line-height: 1.5; }
+
+    .doc-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+    .doc-list-item {
+      display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+      background: #f5f5f5; border-radius: 6px; font-size: 0.83rem;
+    }
+    .doc-list-title { flex: 1; color: #333; }
+    .doc-list-date { font-size: 0.75rem; color: #999; }
+  </style>
+</head>
+<body>
+  <div style="max-width:800px; margin:0 auto;">
+    <div class="header-links">
+      <a href="/node" class="back-link">← Back to Home</a>
+      <a href="https://github.com/RYA234/typescript-container/issues/58" target="_blank" class="gh-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub Issue #58
+      </a>
+      <a href="https://github.com/RYA234/typescript-container/blob/main/.github/docs/features/rag/06-multi-doc/external-design.md" target="_blank" class="gh-link">設計書</a>
+    </div>
+
+    <div class="page-header">
+      <h1>複数ドキュメント横断検索</h1>
+      <p>RAGデモ — 就業規則・マニュアル・議事録を横断して質問に回答 × Gemini AI × Supabase pgvector</p>
+    </div>
+
+    <!-- ドキュメント登録カード（開発環境のみ） -->
+    <div class="card" id="ingestCard">
+      <h2>ドキュメント登録</h2>
+      <div class="label">ドキュメント種別</div>
+      <select id="docType">
+        <option value="employment_rules">就業規則</option>
+        <option value="manual">マニュアル</option>
+        <option value="minutes">議事録</option>
+      </select>
+      <div class="label">タイトル（任意）</div>
+      <input type="text" id="docTitle" placeholder="例: 就業規則2024年版">
+      <div class="label">本文テキスト</div>
+      <textarea id="ingestText" rows="6" placeholder="登録するドキュメントの本文を入力してください..."></textarea>
+      <div class="row">
+        <button id="ingestBtn">登録する</button>
+        <button class="danger" id="deleteBtn">全削除</button>
+        <button id="listBtn" style="background:#546e7a;">一覧表示</button>
+      </div>
+      <div id="ingestResult" class="result-box empty">登録結果がここに表示されます</div>
+      <div id="docList" class="doc-list"></div>
+    </div>
+
+    <!-- 質問カード -->
+    <div class="card">
+      <h2>ドキュメントに質問する</h2>
+      <div class="label">絞り込み（任意）</div>
+      <select id="filterType">
+        <option value="">すべてのドキュメント</option>
+        <option value="employment_rules">就業規則のみ</option>
+        <option value="manual">マニュアルのみ</option>
+        <option value="minutes">議事録のみ</option>
+      </select>
+      <div class="row" style="margin-top:10px;">
+        <input type="text" id="queryInput" placeholder="例: 有給休暇の申請方法は？" style="flex:1;">
+        <button id="queryBtn">質問する</button>
+      </div>
+      <div id="queryResults"></div>
+    </div>
+  </div>
+
+  <script>
+    const isProduction = window.location.hostname !== 'localhost';
+    if (isProduction) {
+      document.getElementById('ingestCard').style.display = 'none';
+    }
+
+    // --- Ingest ---
+    document.getElementById('ingestBtn').addEventListener('click', async () => {
+      const text = document.getElementById('ingestText').value.trim();
+      const documentType = document.getElementById('docType').value;
+      const title = document.getElementById('docTitle').value.trim() || undefined;
+      const resultBox = document.getElementById('ingestResult');
+
+      if (!text) {
+        resultBox.className = 'result-box error';
+        resultBox.textContent = '本文テキストを入力してください';
+        return;
+      }
+
+      const btn = document.getElementById('ingestBtn');
+      btn.disabled = true;
+      resultBox.className = 'result-box loading';
+      resultBox.textContent = '登録中...';
+
+      try {
+        const res = await fetch('/node/rag/multi-doc/ingest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, documentType, title }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || res.statusText);
+        resultBox.className = 'result-box success';
+        resultBox.textContent = `✓ ${data.chunkCount}チャンクを登録しました（${data.executionTimeMs}ms）`;
+      } catch (e) {
+        resultBox.className = 'result-box error';
+        resultBox.textContent = `エラー: ${e.message}`;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // --- Delete ---
+    document.getElementById('deleteBtn').addEventListener('click', async () => {
+      if (!confirm('全ドキュメントデータを削除しますか？')) return;
+      const resultBox = document.getElementById('ingestResult');
+      try {
+        const res = await fetch('/node/rag/multi-doc/documents', { method: 'DELETE' });
+        const data = await res.json();
+        resultBox.className = 'result-box success';
+        resultBox.textContent = `✓ ${data.message}`;
+        document.getElementById('docList').innerHTML = '';
+      } catch (e) {
+        resultBox.className = 'result-box error';
+        resultBox.textContent = `エラー: ${e.message}`;
+      }
+    });
+
+    // --- List ---
+    document.getElementById('listBtn').addEventListener('click', async () => {
+      const docList = document.getElementById('docList');
+      docList.innerHTML = '<div class="result-box loading">取得中...</div>';
+      try {
+        const res = await fetch('/node/rag/multi-doc/documents');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || res.statusText);
+        if (data.documents.length === 0) {
+          docList.innerHTML = '<div class="result-box empty">登録されたドキュメントはありません</div>';
+          return;
+        }
+        const docTypeLabel = { employment_rules: '就業規則', manual: 'マニュアル', minutes: '議事録' };
+        const items = data.documents.map(d => {
+          const label = docTypeLabel[d.documentType] || d.documentType;
+          const badgeClass = `doc-type-${d.documentType in docTypeLabel ? d.documentType : 'other'}`;
+          const date = new Date(d.createdAt).toLocaleDateString('ja-JP');
+          return `<div class="doc-list-item">
+            <span class="doc-type-badge ${badgeClass}">${escHtml(label)}</span>
+            <span class="doc-list-title">${escHtml(d.title || '（タイトルなし）')}</span>
+            <span class="doc-list-date">${date}</span>
+          </div>`;
+        }).join('');
+        docList.innerHTML = items;
+      } catch (e) {
+        docList.innerHTML = `<div class="result-box error">エラー: ${escHtml(e.message)}</div>`;
+      }
+    });
+
+    // --- Query ---
+    document.getElementById('queryBtn').addEventListener('click', async () => {
+      const question = document.getElementById('queryInput').value.trim();
+      const documentType = document.getElementById('filterType').value || undefined;
+      const container = document.getElementById('queryResults');
+
+      if (!question) {
+        container.innerHTML = '<div class="result-box error">質問を入力してください</div>';
+        return;
+      }
+
+      const btn = document.getElementById('queryBtn');
+      btn.disabled = true;
+      container.innerHTML = '<div class="result-box loading">回答を生成中...</div>';
+
+      try {
+        const res = await fetch('/node/rag/multi-doc/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question, documentType }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || res.statusText);
+
+        const docTypeLabel = { employment_rules: '就業規則', manual: 'マニュアル', minutes: '議事録' };
+
+        let sourcesHtml = '';
+        if (data.sources && data.sources.length > 0) {
+          const items = data.sources.map((s, i) => {
+            const label = docTypeLabel[s.documentType] || s.documentType;
+            const badgeClass = `doc-type-${s.documentType in docTypeLabel ? s.documentType : 'other'}`;
+            return `<div class="source-item">
+              <div class="source-header">
+                <span style="color:#999;font-size:0.78rem;">[${i + 1}]</span>
+                <span class="doc-type-badge ${badgeClass}">${escHtml(label)}</span>
+                ${s.title ? `<span class="source-title">${escHtml(s.title)}</span>` : ''}
+                <span class="sim-badge">${(s.similarity * 100).toFixed(1)}%</span>
+              </div>
+              <div class="source-content">${escHtml(s.content)}</div>
+            </div>`;
+          }).join('');
+          sourcesHtml = `<div class="sources-section">
+            <div class="sources-title">参照ドキュメント（${data.sources.length}件）</div>
+            ${items}
+          </div>`;
+        }
+
+        container.innerHTML = `
+          <div class="answer-box">${escHtml(data.answer)}</div>
+          ${sourcesHtml}
+          <div style="font-size:0.78rem;color:#999;margin-top:8px;">処理時間: ${data.executionTimeMs}ms</div>
+        `;
+      } catch (e) {
+        container.innerHTML = `<div class="result-box error">エラー: ${escHtml(e.message)}</div>`;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById('queryInput').addEventListener('keypress', e => {
+      if (e.key === 'Enter') document.getElementById('queryBtn').click();
+    });
+
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  </script>
+</body>
+</html>
