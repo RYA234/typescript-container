@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { placeholderHtml } from '../shared/placeholder';
 import { RagController } from './company-rules/controller';
 import productRouter from './product/router';
+import faqRouter from './faq/router';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 
@@ -42,7 +43,12 @@ router.get('/product-catalog', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'product', 'views', 'product-catalog.html'));
 });
 router.use('/product', productRouter);
-router.get('/faq', placeholder('FAQ自動回答'));
+
+// #55 FAQ自動回答
+router.get('/faq', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'faq', 'views', 'faq.html'));
+});
+router.use('/faq', faqRouter);
 router.get('/glossary', placeholder('社内用語集検索'));
 router.get('/recipe', placeholder('料理レシピ検索'));
 router.get('/multi-doc', placeholder('複数ドキュメント横断検索'));
