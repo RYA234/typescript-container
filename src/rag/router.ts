@@ -4,6 +4,7 @@ import { RagController } from './company-rules/controller';
 import productRouter from './product/router';
 import faqRouter from './faq/router';
 import glossaryRouter from './glossary/router';
+import recipeRouter from './recipe/router';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 
@@ -55,7 +56,11 @@ router.get('/glossary', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'glossary', 'views', 'glossary.html'));
 });
 router.use('/glossary', glossaryRouter);
-router.get('/recipe', placeholder('料理レシピ検索'));
+// #57 料理レシピ検索
+router.get('/recipe', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'recipe', 'views', 'recipe.html'));
+});
+router.use('/recipe', recipeRouter);
 router.get('/multi-doc', placeholder('複数ドキュメント横断検索'));
 router.get('/category-filter', placeholder('カテゴリ別フィルタリング'));
 router.get('/date-filter', placeholder('日付範囲フィルタリング'));
