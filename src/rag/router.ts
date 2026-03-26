@@ -5,6 +5,7 @@ import productRouter from './product/router';
 import faqRouter from './faq/router';
 import glossaryRouter from './glossary/router';
 import recipeRouter from './recipe/router';
+import multiDocRouter from './multi-doc/router';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 
@@ -61,7 +62,11 @@ router.get('/recipe', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'recipe', 'views', 'recipe.html'));
 });
 router.use('/recipe', recipeRouter);
-router.get('/multi-doc', placeholder('複数ドキュメント横断検索'));
+// #58 複数ドキュメント横断検索
+router.get('/multi-doc', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'multi-doc', 'views', 'multi-doc.html'));
+});
+router.use('/multi-doc', multiDocRouter);
 router.get('/category-filter', placeholder('カテゴリ別フィルタリング'));
 router.get('/date-filter', placeholder('日付範囲フィルタリング'));
 router.get('/pdf', placeholder('PDFドキュメント取り込み'));
