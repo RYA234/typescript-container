@@ -66,7 +66,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     // プレイヤーテクスチャ生成
-    const playerGfx = this.make.graphics({ x: 0, y: 0, add: false });
+    const playerGfx = this.make.graphics({ x: 0, y: 0 });
     playerGfx.fillStyle(0xf59e0b, 1);
     playerGfx.fillCircle(12, 12, 12);
     playerGfx.fillStyle(0xfbbf24, 1);
@@ -83,7 +83,7 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.player, this.walls);
 
     // マーカーテクスチャ生成
-    const markerGfx = this.make.graphics({ x: 0, y: 0, add: false });
+    const markerGfx = this.make.graphics({ x: 0, y: 0 });
     markerGfx.lineStyle(2, 0xf59e0b, 1);
     markerGfx.strokeCircle(8, 8, 8);
     markerGfx.generateTexture('marker', 16, 16);
@@ -117,7 +117,7 @@ export class GameScene extends Phaser.Scene {
     );
 
     if (dist < 6) {
-      this.player.body!.setVelocity(0, 0);
+      (this.player.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
       this.target.setAlpha(0);
       this.moving = false;
     }
