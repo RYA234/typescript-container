@@ -6,6 +6,7 @@ import { chatbotRouter } from './chatbot';
 import { supabaseRouter } from './supabase';
 import ragRouter from './rag/router';
 import agentRouter from './agent/router';
+import phaserRouter from './phaser/router';
 
 const app = express();
 const port: number = config.port;
@@ -26,6 +27,7 @@ app.use(basePath, chatbotRouter);
 app.use(`${basePath}/supabase`, supabaseRouter);
 app.use(`${basePath}/rag`, ragRouter);
 app.use(`${basePath}/agent`, agentRouter);
+app.use(`${basePath}/phaser`, phaserRouter);
 
 // Only start server if this file is run directly
 if (require.main === module) {

@@ -32,6 +32,7 @@ RUN npm ci --only=production && \
 COPY --from=builder /usr/src/app/dist ./dist
 COPY src/rag ./dist/src/rag
 COPY src/agent ./dist/src/agent
+COPY src/phaser ./dist/src/phaser
 
 EXPOSE 3000
 
