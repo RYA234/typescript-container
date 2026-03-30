@@ -8,3 +8,6 @@ playwright-report/
 test-results/
 start-local.bat
 .claude/settings.local.json
+
+# esbuild成果物
+src/phaser/views/game.js
