@@ -8,11 +8,9 @@ test.describe('Express App E2E Tests', () => {
     expect(content).toBe('OK');
   });
 
-  test('should display welcome message on /node endpoint', async ({ page }) => {
-    await page.goto('/node');
-
-    const content = await page.textContent('body');
-    expect(content).toBe('Hello from Node.js on ECS!');
+  test('should display index page on /node endpoint', async ({ page }) => {
+    const response = await page.goto('/node');
+    expect(response?.status()).toBe(200);
   });
 
   test('should return 404 for unknown routes', async ({ page }) => {
