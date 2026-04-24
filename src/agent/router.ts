@@ -9,6 +9,7 @@ import creditCheckRouter from './credit-check/router';
 import estimateRouter from './estimate/router';
 import attendanceRouter from './attendance/router';
 import inquiryRoutingRouter from './inquiry-routing/router';
+import dataAggregationRouter from './data-aggregation/router';
 import path from 'path';
 
 const router = Router();
@@ -63,7 +64,11 @@ router.get('/inquiry', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'inquiry-routing', 'views', 'inquiry-routing-agent.html'));
 });
 router.use('/inquiry', inquiryRoutingRouter);
-router.get('/aggregate', placeholder('データ集計エージェント'));
+// #77 データ集計エージェント
+router.get('/aggregate', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'data-aggregation', 'views', 'data-aggregation-agent.html'));
+});
+router.use('/aggregate', dataAggregationRouter);
 router.get('/rag', placeholder('RAG + エージェント連携'));
 router.get('/langgraph', placeholder('LangGraphエージェント'));
 router.get('/research', placeholder('自律リサーチエージェント'));
