@@ -11,6 +11,7 @@ import attendanceRouter from './attendance/router';
 import inquiryRoutingRouter from './inquiry-routing/router';
 import dataAggregationRouter from './data-aggregation/router';
 import ragAgentRouter from './rag-agent/router';
+import langGraphRouter from './langgraph/router';
 import path from 'path';
 
 const router = Router();
@@ -75,7 +76,11 @@ router.get('/rag', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'rag-agent', 'views', 'rag-agent.html'));
 });
 router.use('/rag', ragAgentRouter);
-router.get('/langgraph', placeholder('LangGraphエージェント'));
+// #79 LangGraphエージェント
+router.get('/langgraph', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'langgraph', 'views', 'langgraph-agent.html'));
+});
+router.use('/langgraph', langGraphRouter);
 router.get('/research', placeholder('自律リサーチエージェント'));
 router.get('/multi', placeholder('マルチエージェント'));
 router.get('/credit-check-dotnet', placeholder('与信チェック + dotnet連携'));
