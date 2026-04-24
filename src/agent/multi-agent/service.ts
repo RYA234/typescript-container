@@ -22,7 +22,7 @@ export class OrchestratorAgent {
   }
 
   async decomposeTask(message: string): Promise<string[]> {
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+    const model = this.genAI.getGenerativeModel({ model: 'gemini-flash-lite-latest' });
     const prompt = `以下のタスクを 2〜4 個のサブタスクに分解してください。
 タスク: "${message}"
 JSON 配列（文字列のリスト）のみを返してください。例: ["サブタスク1", "サブタスク2", "まとめ作成"]`;
@@ -50,7 +50,7 @@ export class ResearchAgent {
   async research(topic: string): Promise<string> {
     const localResult =
       [...SEARCH_DB.entries()].find(([key]) => topic.includes(key))?.[1] ?? '情報なし';
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+    const model = this.genAI.getGenerativeModel({ model: 'gemini-flash-lite-latest' });
     const prompt = `次の情報をもとに "${topic}" について 2〜3 文でまとめてください: ${localResult}`;
     const result = await model.generateContent(prompt);
     return result.response.text().trim();
@@ -65,7 +65,7 @@ export class SummaryAgent {
   }
 
   async summarize(results: ResearchResult[]): Promise<string> {
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+    const model = this.genAI.getGenerativeModel({ model: 'gemini-flash-lite-latest' });
     const context = results.map((r) => `【${r.topic}】\n${r.content}`).join('\n\n');
     const prompt = `次の調査結果をもとに、わかりやすいレポートを作成してください:\n\n${context}`;
     const result = await model.generateContent(prompt);
