@@ -7,6 +7,7 @@ import unitConvertRouter from './unit-convert/router';
 import calendarRouter from './calendar/router';
 import creditCheckRouter from './credit-check/router';
 import estimateRouter from './estimate/router';
+import attendanceRouter from './attendance/router';
 import path from 'path';
 
 const router = Router();
@@ -51,7 +52,11 @@ router.get('/estimate', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'estimate', 'views', 'estimate-agent.html'));
 });
 router.use('/estimate', estimateRouter);
-router.get('/attendance', placeholder('勤怠管理エージェント'));
+// #75 勤怠管理エージェント
+router.get('/attendance', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'attendance', 'views', 'attendance-agent.html'));
+});
+router.use('/attendance', attendanceRouter);
 router.get('/inquiry', placeholder('問い合わせ振り分けエージェント'));
 router.get('/aggregate', placeholder('データ集計エージェント'));
 router.get('/rag', placeholder('RAG + エージェント連携'));
