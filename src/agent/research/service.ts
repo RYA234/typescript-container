@@ -75,14 +75,14 @@ export class ResearchService {
   }
 
   async summarize(text: string): Promise<string> {
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+    const model = this.genAI.getGenerativeModel({ model: 'gemini-flash-lite-latest' });
     const prompt = `以下の情報を100字以内で簡潔にまとめてください：\n\n${text}`;
     const result = await model.generateContent(prompt);
     return result.response.text().trim();
   }
 
   async decideNext(summary: string, originalQuestion: string): Promise<NextDecision> {
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+    const model = this.genAI.getGenerativeModel({ model: 'gemini-flash-lite-latest' });
     const prompt = `元の質問: "${originalQuestion}"
 現在の調査要約: ${summary}
 
@@ -108,7 +108,7 @@ export class ResearchService {
   }
 
   private async generateFinalReply(originalQuestion: string, summaries: string[]): Promise<string> {
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+    const model = this.genAI.getGenerativeModel({ model: 'gemini-flash-lite-latest' });
     const summaryText = summaries.map((s, i) => `[${i + 1}] ${s}`).join('\n');
     const prompt = `以下の調査結果をもとに、「${originalQuestion}」について包括的に回答してください：\n\n${summaryText}`;
     const result = await model.generateContent(prompt);
