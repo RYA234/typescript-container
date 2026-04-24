@@ -5,6 +5,7 @@ import inventoryAgentRouter from './inventory/router';
 import orderStatusRouter from './order-status/router';
 import unitConvertRouter from './unit-convert/router';
 import calendarRouter from './calendar/router';
+import estimateRouter from './estimate/router';
 import path from 'path';
 
 const router = Router();
@@ -40,7 +41,11 @@ router.get('/calendar', (_req: Request, res: Response) => {
 });
 router.use('/calendar', calendarRouter);
 router.get('/credit-check', placeholder('与信チェックエージェント'));
-router.get('/estimate', placeholder('見積もり作成エージェント'));
+// #74 見積もり作成エージェント
+router.get('/estimate', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'estimate', 'views', 'estimate-agent.html'));
+});
+router.use('/estimate', estimateRouter);
 router.get('/attendance', placeholder('勤怠管理エージェント'));
 router.get('/inquiry', placeholder('問い合わせ振り分けエージェント'));
 router.get('/aggregate', placeholder('データ集計エージェント'));

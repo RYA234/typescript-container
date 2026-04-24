@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>見積もり作成エージェント</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #134e5e 0%, #71b280 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+    .header-links { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    .header-links a {
+      font-size: 0.85rem; color: #134e5e; text-decoration: none;
+      padding: 4px 10px; border: 1px solid #134e5e; border-radius: 4px;
+    }
+    .header-links a:hover { background: #134e5e; color: white; }
+    h1 { color: #134e5e; font-size: 2rem; margin-bottom: 8px; }
+    .subtitle { color: #666; margin-bottom: 24px; }
+    .products-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 0.9rem; }
+    .products-table th { background: #134e5e; color: white; padding: 8px 12px; text-align: left; }
+    .products-table td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+    .products-table tr:hover td { background: #f0f9f4; }
+    .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .example-btn {
+      background: #f0f9f4; border: 1px solid #134e5e; color: #134e5e;
+      padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+    }
+    .example-btn:hover { background: #134e5e; color: white; }
+    .input-area { display: flex; gap: 8px; margin-bottom: 24px; }
+    input[type="text"] {
+      flex: 1; padding: 10px 14px; border: 2px solid #ddd;
+      border-radius: 8px; font-size: 0.95rem;
+    }
+    input[type="text"]:focus { outline: none; border-color: #134e5e; }
+    button.send-btn {
+      background: #134e5e; color: white; border: none;
+      padding: 10px 24px; border-radius: 8px; cursor: pointer; font-weight: 600;
+    }
+    button.send-btn:hover { background: #0d3a47; }
+    button.send-btn:disabled { background: #ccc; cursor: not-allowed; }
+    .result { display: none; }
+    .tool-log { background: #f8f8f8; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .tool-log h3 { font-size: 0.85rem; color: #999; margin-bottom: 8px; }
+    .tool-entry { font-family: monospace; font-size: 0.85rem; color: #555; margin-bottom: 4px; }
+    .tool-name { color: #134e5e; font-weight: 600; }
+    .answer-box { background: #f0f9f4; border-left: 4px solid #134e5e; padding: 16px; border-radius: 0 8px 8px 0; }
+    .answer-box p { white-space: pre-wrap; }
+    .loading { color: #999; font-style: italic; }
+    .error-msg { color: #dc3545; }
+    .exec-time { font-size: 0.8rem; color: #999; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-links">
+      <a href="/">← Back to Home</a>
+      <a href="https://github.com/RYA234/typescript-container/issues/74" target="_blank">GitHub Source #74</a>
+      <a href="https://github.com/RYA234/typescript-container/blob/main/.github/docs/features/agent/07-estimate/internal-design.md" target="_blank">内部設計書</a>
+      <a href="https://github.com/RYA234/typescript-container/blob/main/.github/docs/features/agent/07-estimate/operation-manual.md" target="_blank">運用マニュアル</a>
+    </div>
+
+    <h1>見積もり作成エージェント</h1>
+    <p class="subtitle">Gemini Function Calling を使って商品選択→数量確認→合計算出→見積書生成を自動実行します</p>
+
+    <table class="products-table">
+      <thead><tr><th>商品名</th><th>商品ID</th><th>単価</th><th>単位</th></tr></thead>
+      <tbody>
+        <tr><td>ノートパソコン</td><td>PC-001</td><td>120,000円</td><td>台</td></tr>
+        <tr><td>マウス</td><td>ACC-001</td><td>2,500円</td><td>個</td></tr>
+        <tr><td>キーボード</td><td>ACC-002</td><td>5,000円</td><td>個</td></tr>
+        <tr><td>モニター</td><td>MON-001</td><td>35,000円</td><td>台</td></tr>
+        <tr><td>プリンター</td><td>PRN-001</td><td>28,000円</td><td>台</td></tr>
+      </tbody>
+    </table>
+
+    <div class="examples">
+      <button class="example-btn" onclick="setExample('モニターを2台購入したい。見積書を作成してください')">モニター2台</button>
+      <button class="example-btn" onclick="setExample('ノートパソコン5台、マウス5個、キーボード5個の見積もりを作成してください')">PC一式5セット</button>
+      <button class="example-btn" onclick="setExample('プリンター1台とマウス3個の見積書をください')">プリンター+マウス</button>
+      <button class="example-btn" onclick="setExample('存在しない商品の見積もりをお願いします')">存在しない商品</button>
+    </div>
+
+    <div class="input-area">
+      <input type="text" id="messageInput" placeholder="例：ノートパソコン5台、マウス5個の見積もりを作成してください" />
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">送信</button>
+    </div>
+
+    <div class="result" id="result">
+      <div class="tool-log" id="toolLog" style="display:none">
+        <h3>🔧 ツール呼び出しログ</h3>
+        <div id="toolEntries"></div>
+      </div>
+      <div class="answer-box">
+        <p id="answerText"></p>
+        <p class="exec-time" id="execTime"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setExample(text) {
+      document.getElementById('messageInput').value = text;
+      document.getElementById('messageInput').focus();
+    }
+    document.getElementById('messageInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value.trim();
+      if (!message) return;
+      const sendBtn = document.getElementById('sendBtn');
+      const result = document.getElementById('result');
+      const answerText = document.getElementById('answerText');
+      const toolLog = document.getElementById('toolLog');
+      const toolEntries = document.getElementById('toolEntries');
+      const execTime = document.getElementById('execTime');
+      sendBtn.disabled = true;
+      result.style.display = 'block';
+      toolLog.style.display = 'none';
+      toolEntries.innerHTML = '';
+      answerText.textContent = '考え中...';
+      answerText.className = 'loading';
+      execTime.textContent = '';
+      try {
+        const res = await fetch('/node/agent/estimate/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          answerText.textContent = data.message || 'エラーが発生しました';
+          answerText.className = 'error-msg';
+          return;
+        }
+        if (data.toolsUsed && data.toolsUsed.length > 0) {
+          toolLog.style.display = 'block';
+          data.toolsUsed.forEach(tool => {
+            const entry = document.createElement('div');
+            entry.className = 'tool-entry';
+            entry.innerHTML = `<span class="tool-name">🔧 ${tool.name}</span>(${JSON.stringify(tool.input)}) → ${JSON.stringify(tool.output)}`;
+            toolEntries.appendChild(entry);
+          });
+        }
+        answerText.textContent = data.answer;
+        answerText.className = '';
+        execTime.textContent = `実行時間: ${data.executionTimeMs}ms`;
+      } catch {
+        answerText.textContent = 'ネットワークエラーが発生しました';
+        answerText.className = 'error-msg';
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
