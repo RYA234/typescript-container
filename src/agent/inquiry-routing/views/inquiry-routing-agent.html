@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>問い合わせ振り分けエージェント</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #e65100 0%, #ff8f00 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+    .header-links { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    .header-links a {
+      font-size: 0.85rem; color: #e65100; text-decoration: none;
+      padding: 4px 10px; border: 1px solid #e65100; border-radius: 4px;
+    }
+    .header-links a:hover { background: #e65100; color: white; }
+    h1 { color: #e65100; font-size: 2rem; margin-bottom: 8px; }
+    .subtitle { color: #666; margin-bottom: 24px; }
+    .dept-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 0.9rem; }
+    .dept-table th { background: #e65100; color: white; padding: 8px 12px; text-align: left; }
+    .dept-table td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+    .dept-table tr:hover td { background: #fff3e0; }
+    .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .example-btn {
+      background: #fff3e0; border: 1px solid #e65100; color: #e65100;
+      padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+    }
+    .example-btn:hover { background: #e65100; color: white; }
+    .input-area { display: flex; gap: 8px; margin-bottom: 24px; }
+    textarea {
+      flex: 1; padding: 10px 14px; border: 2px solid #ddd;
+      border-radius: 8px; font-size: 0.95rem; resize: vertical; min-height: 80px;
+      font-family: inherit;
+    }
+    textarea:focus { outline: none; border-color: #e65100; }
+    button.send-btn {
+      background: #e65100; color: white; border: none;
+      padding: 10px 24px; border-radius: 8px; cursor: pointer; font-weight: 600;
+      align-self: flex-end;
+    }
+    button.send-btn:hover { background: #bf360c; }
+    button.send-btn:disabled { background: #ccc; cursor: not-allowed; }
+    .flow { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .flow-step {
+      background: #fff3e0; border: 1px solid #e65100; border-radius: 6px;
+      padding: 6px 12px; font-size: 0.85rem; color: #e65100;
+    }
+    .flow-arrow { color: #e65100; font-weight: bold; }
+    .result { display: none; }
+    .tool-log { background: #f8f8f8; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .tool-log h3 { font-size: 0.85rem; color: #999; margin-bottom: 8px; }
+    .tool-entry { font-family: monospace; font-size: 0.85rem; color: #555; margin-bottom: 4px; }
+    .tool-name { color: #e65100; font-weight: 600; }
+    .answer-box { background: #fff3e0; border-left: 4px solid #e65100; padding: 16px; border-radius: 0 8px 8px 0; }
+    .answer-box p { white-space: pre-wrap; }
+    .loading { color: #999; font-style: italic; }
+    .error-msg { color: #dc3545; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-links">
+      <a href="/">← Back to Home</a>
+      <a href="https://github.com/RYA234/typescript-container/issues/76" target="_blank">GitHub Source #76</a>
+      <a href="https://github.com/RYA234/typescript-container/blob/main/.github/docs/features/agent/09-inquiry-routing/internal-design.md" target="_blank">内部設計書</a>
+      <a href="https://github.com/RYA234/typescript-container/blob/main/.github/docs/features/agent/09-inquiry-routing/operation-manual.md" target="_blank">運用マニュアル</a>
+    </div>
+
+    <h1>問い合わせ振り分けエージェント</h1>
+    <p class="subtitle">Gemini Function Calling を使ってカテゴリ分類→担当部門取得→チケット作成を自動実行します</p>
+
+    <table class="dept-table">
+      <thead><tr><th>カテゴリ</th><th>担当部門</th><th>キーワード例</th></tr></thead>
+      <tbody>
+        <tr><td>配送問題</td><td>物流部門</td><td>届かない / 配送 / 発送 / 遅延</td></tr>
+        <tr><td>商品不良</td><td>品質管理部門</td><td>壊れ / 不良 / 欠陥 / 破損</td></tr>
+        <tr><td>請求・支払い</td><td>経理部門</td><td>請求 / 支払 / 返金 / 領収</td></tr>
+        <tr><td>技術サポート</td><td>ITサポート部門</td><td>エラー / 動かない / バグ / 不具合</td></tr>
+        <tr><td>一般問い合わせ</td><td>カスタマーサポート部門</td><td>上記以外</td></tr>
+      </tbody>
+    </table>
+
+    <div class="flow">
+      <div class="flow-step">① カテゴリ分類</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">② 担当部門取得</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">③ チケット作成</div>
+    </div>
+
+    <div class="examples">
+      <button class="example-btn" onclick="setExample('商品が届いていません。注文番号は ORD-123 です。')">配送問題</button>
+      <button class="example-btn" onclick="setExample('購入した商品が壊れていました。交換をお願いしたいです。')">商品不良</button>
+      <button class="example-btn" onclick="setExample('先月の請求金額が間違っています。返金をお願いします。')">請求・支払い</button>
+      <button class="example-btn" onclick="setExample('アプリにエラーが発生して動かなくなりました。')">技術サポート</button>
+      <button class="example-btn" onclick="setExample('営業時間を教えてください。')">一般問い合わせ</button>
+    </div>
+
+    <div class="input-area">
+      <textarea id="messageInput" placeholder="お問い合わせ内容を入力してください"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">送信</button>
+    </div>
+
+    <div class="result" id="result">
+      <div class="tool-log" id="toolLog" style="display:none">
+        <h3>🔧 ツール呼び出しログ</h3>
+        <div id="toolEntries"></div>
+      </div>
+      <div class="answer-box">
+        <p id="answerText"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setExample(text) {
+      document.getElementById('messageInput').value = text;
+      document.getElementById('messageInput').focus();
+    }
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value.trim();
+      if (!message) return;
+      const sendBtn = document.getElementById('sendBtn');
+      const result = document.getElementById('result');
+      const answerText = document.getElementById('answerText');
+      const toolLog = document.getElementById('toolLog');
+      const toolEntries = document.getElementById('toolEntries');
+      sendBtn.disabled = true;
+      result.style.display = 'block';
+      toolLog.style.display = 'none';
+      toolEntries.innerHTML = '';
+      answerText.textContent = '考え中...';
+      answerText.className = 'loading';
+      try {
+        const res = await fetch('/node/agent/inquiry/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          answerText.textContent = data.message || 'エラーが発生しました';
+          answerText.className = 'error-msg';
+          return;
+        }
+        if (data.toolCalls && data.toolCalls.length > 0) {
+          toolLog.style.display = 'block';
+          data.toolCalls.forEach(tool => {
+            const entry = document.createElement('div');
+            entry.className = 'tool-entry';
+            entry.innerHTML = `<span class="tool-name">🔧 ${tool.name}</span>(${JSON.stringify(tool.args)}) → ${tool.result}`;
+            toolEntries.appendChild(entry);
+          });
+        }
+        answerText.textContent = data.reply;
+        answerText.className = '';
+      } catch {
+        answerText.textContent = 'ネットワークエラーが発生しました';
+        answerText.className = 'error-msg';
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

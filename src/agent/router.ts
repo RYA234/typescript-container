@@ -8,6 +8,7 @@ import calendarRouter from './calendar/router';
 import creditCheckRouter from './credit-check/router';
 import estimateRouter from './estimate/router';
 import attendanceRouter from './attendance/router';
+import inquiryRoutingRouter from './inquiry-routing/router';
 import path from 'path';
 
 const router = Router();
@@ -57,7 +58,11 @@ router.get('/attendance', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'attendance', 'views', 'attendance-agent.html'));
 });
 router.use('/attendance', attendanceRouter);
-router.get('/inquiry', placeholder('問い合わせ振り分けエージェント'));
+// #76 問い合わせ振り分けエージェント
+router.get('/inquiry', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'inquiry-routing', 'views', 'inquiry-routing-agent.html'));
+});
+router.use('/inquiry', inquiryRoutingRouter);
 router.get('/aggregate', placeholder('データ集計エージェント'));
 router.get('/rag', placeholder('RAG + エージェント連携'));
 router.get('/langgraph', placeholder('LangGraphエージェント'));
