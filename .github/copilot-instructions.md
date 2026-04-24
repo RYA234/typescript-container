@@ -191,3 +191,102 @@ app.use('/node', sampleRouter);
 - **モノリシック**: 当面はモノリシックな構成を維持
 - **シンプルなUI**: フロントエンドはシンプルなHTML/CSS/JSを使用（Next.jsなど重いフレームワークは避ける）
 - **業務ドメイン**: RAG、UXなど業務ごとにフォルダを分ける
+
+# 開発の流れ
+
+## 1. ドキュメント作成（AI）
+
+### 外部設計書 `.github/docs/features/[feature]/external-design.md`
+- 機能概要・ターゲットユーザー
+- エンドポイント一覧（メソッド・パス・概要）
+- リクエスト/レスポンスの型定義（例付き）
+- エラーケース一覧（HTTPステータスコード・エラーコード・メッセージ）
+- curl コマンド例
+
+### 内部設計書 `.github/docs/features/[feature]/internal-design.md`
+- TypeScript型定義（interfaces）
+- クラス・関数の責務と実装方針
+- ダミーデータ・外部API連携の詳細
+- テスト方針（Unit / Integration / E2E の対象と確認観点）
+
+### 運用マニュアル `.github/docs/features/[feature]/operation-manual.md`
+- セットアップ手順
+- curl コマンド例（正常系・異常系）
+- レスポンス例
+- よくあるエラーと対処
+
+---
+
+## 2. コード実装（AI）
+
+以下の順番で実装する。
+
+1. **型定義** `src/interfaces/[feature].ts`
+   - 内部設計書の型定義をそのまま実装
+
+2. **Service** `src/[feature]/service.ts`
+   - ビジネスロジックのみ記述
+   - 外部API・DBアクセスはServiceに集約
+
+3. **Controller** `src/[feature]/controller.ts`
+   - リクエストのバリデーションとレスポンス返却のみ
+   - ビジネスロジックはServiceに委譲
+
+4. **Router** `src/[feature]/router.ts`
+   - ルーティング定義とレートリミット設定のみ
+
+5. **View** `src/[feature]/views/[feature].html`（UIが必要な場合）
+   - シンプルなHTML/CSS/JS
+   - fetch APIでエンドポイントを呼び出す
+
+6. **Router登録** `src/agent/router.ts` または `src/app.ts`
+   - 新機能のルーターをマウント
+
+---
+
+## 3. テスト工程（AI）
+
+### Jestで単体テスト `src/[feature]/tests/service.test.ts`
+
+対象：Serviceのメソッド単位
+
+必須テストケース：
+- 正常系（代表的な入力に対して期待値を返す）
+- 異常系（存在しないデータ・不正な入力）
+- 境界値（スコア判定の境界など）
+
+外部依存（Gemini API等）は `jest.mock` でモック化する。
+
+### PlaywrightでE2Eテスト
+
+**APIテスト** `e2e/[category]/[feature].spec.ts`
+- `GET /health` → 200・okを確認
+- `POST /chat` → message未指定で400・MISSING_MESSAGEを確認
+- `POST /chat` → 空文字で400を確認
+
+**デモ動画テスト** `e2e/demo/[feature].spec.ts`
+- APIをモックして Gemini 不要でデモを録画
+- 正常系・異常系・境界値を画面操作で示す
+- `showCaption` でナレーションを挿入
+
+---
+
+## 4. レビュー（人間）
+
+1. **ローカル動作確認**
+   - `npm run dev` でサーバー起動
+   - ブラウザで画面を開き、実際に操作して動作を確認
+   - curl コマンドで正常系・異常系を確認
+
+2. **テスト結果確認**
+   - `npx jest` でUnitテストがすべてパスすること
+   - `npx playwright test` でE2Eテストがすべてパスすること
+
+3. **コードレビュー観点**
+   - 型が適切に付いているか（`any` や不必要な型アサーションがないか）
+   - エラーハンドリングが漏れていないか
+   - 設計書との実装の乖離がないか
+
+4. **問題なければコミット・PR作成**
+   - コミットメッセージ: `feat: [機能名] close #[issue番号]`
+   - PRに `Closes #[issue番号]` を記載
