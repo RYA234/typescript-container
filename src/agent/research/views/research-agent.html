@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>自律リサーチエージェント</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 24px; }
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 { font-size: 1.5rem; font-weight: 700; color: #60a5fa; margin-bottom: 4px; }
+    .subtitle { font-size: 0.875rem; color: #94a3b8; margin-bottom: 24px; }
+    .card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    .label { font-size: 0.75rem; color: #94a3b8; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .example-btn {
+      background: #1e3a5f; border: 1px solid #2563eb; color: #93c5fd;
+      border-radius: 20px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .example-btn:hover { background: #1d4ed8; color: #fff; }
+    textarea {
+      width: 100%; background: #0f172a; border: 1px solid #334155; color: #e2e8f0;
+      border-radius: 8px; padding: 12px; font-size: 0.95rem; resize: vertical;
+      min-height: 80px; font-family: inherit;
+    }
+    textarea:focus { outline: none; border-color: #3b82f6; }
+    .controls { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+    .iter-label { font-size: 0.85rem; color: #94a3b8; white-space: nowrap; }
+    select {
+      background: #0f172a; border: 1px solid #334155; color: #e2e8f0;
+      border-radius: 6px; padding: 6px 10px; font-size: 0.85rem;
+    }
+    #sendBtn {
+      background: #2563eb; color: #fff; border: none; border-radius: 8px;
+      padding: 10px 24px; font-size: 0.95rem; cursor: pointer; font-weight: 600;
+      transition: background 0.2s; margin-left: auto;
+    }
+    #sendBtn:hover { background: #1d4ed8; }
+    #sendBtn:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+    #result { display: none; }
+    .reply-box { background: #0f172a; border-left: 4px solid #22c55e; border-radius: 8px; padding: 16px; margin-bottom: 16px; line-height: 1.6; }
+    .meta { display: flex; gap: 12px; margin-bottom: 16px; }
+    .badge {
+      background: #0f172a; border: 1px solid #334155; border-radius: 6px;
+      padding: 4px 12px; font-size: 0.8rem; color: #94a3b8;
+    }
+    .badge span { color: #60a5fa; font-weight: 700; }
+    .history-title { font-size: 0.85rem; color: #94a3b8; font-weight: 600; margin-bottom: 10px; }
+    .iteration {
+      background: #0f172a; border-radius: 8px; padding: 14px; margin-bottom: 10px;
+      border-left: 3px solid #3b82f6;
+    }
+    .iter-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .iter-num { background: #1d4ed8; color: #fff; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
+    .iter-query { font-size: 0.85rem; color: #93c5fd; }
+    .raw-result { font-size: 0.78rem; color: #64748b; margin-bottom: 6px; white-space: pre-wrap; }
+    .iter-summary { font-size: 0.85rem; color: #a5f3fc; }
+    .loading-dots::after { content: ''; animation: dots 1.2s infinite; }
+    @keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} 100%{content:''} }
+    #error { display: none; background: #450a0a; border: 1px solid #ef4444; border-radius: 8px; padding: 12px; color: #fca5a5; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>自律リサーチエージェント</h1>
+    <p class="subtitle">検索 → 要約 → 継続判断 を繰り返す自律型エージェント</p>
+
+    <div class="card">
+      <div class="label">クエリ例</div>
+      <div class="examples">
+        <button class="example-btn" onclick="setQuery('TypeScript 最新バージョンについて調べて')">TypeScript 最新バージョン</button>
+        <button class="example-btn" onclick="setQuery('Node.js のパフォーマンス最適化について調査して')">Node.js パフォーマンス</button>
+        <button class="example-btn" onclick="setQuery('Docker と Kubernetes の関係を調べて')">Docker と Kubernetes</button>
+      </div>
+
+      <div class="label">調査内容</div>
+      <textarea id="queryInput" placeholder="調査したい内容を入力してください..."></textarea>
+
+      <div class="controls">
+        <span class="iter-label">最大イテレーション:</span>
+        <select id="maxIter">
+          <option value="1">1回</option>
+          <option value="2">2回</option>
+          <option value="3" selected>3回</option>
+          <option value="5">5回</option>
+        </select>
+        <button id="sendBtn" onclick="startResearch()">リサーチ開始</button>
+      </div>
+      <div id="error"></div>
+    </div>
+
+    <div id="result">
+      <div class="card">
+        <div class="label">最終回答</div>
+        <div id="replyText" class="reply-box"></div>
+        <div class="meta">
+          <div class="badge">実行回数: <span id="iterCount">-</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="history-title">リサーチ履歴</div>
+        <div id="historyList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setQuery(text) {
+      document.getElementById('queryInput').value = text;
+    }
+
+    async function startResearch() {
+      const query = document.getElementById('queryInput').value.trim();
+      if (!query) return;
+
+      const maxIterations = parseInt(document.getElementById('maxIter').value, 10);
+      const btn = document.getElementById('sendBtn');
+      const error = document.getElementById('error');
+      const result = document.getElementById('result');
+
+      btn.disabled = true;
+      btn.textContent = '調査中...';
+      error.style.display = 'none';
+      result.style.display = 'none';
+
+      document.getElementById('replyText').innerHTML = '<span class="loading-dots">調査中</span>';
+      document.getElementById('historyList').innerHTML = '';
+      document.getElementById('iterCount').textContent = '-';
+      result.style.display = 'block';
+
+      try {
+        const res = await fetch('/node/agent/research/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: query, maxIterations }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          error.textContent = data.message || 'エラーが発生しました';
+          error.style.display = 'block';
+          result.style.display = 'none';
+          return;
+        }
+
+        document.getElementById('replyText').textContent = data.reply;
+        document.getElementById('iterCount').innerHTML = `<span>${data.iterations}</span>`;
+
+        const historyList = document.getElementById('historyList');
+        (data.searchHistory || []).forEach((entry, i) => {
+          const div = document.createElement('div');
+          div.className = 'iteration';
+          div.innerHTML = `
+            <div class="iter-header">
+              <div class="iter-num">${i + 1}</div>
+              <div class="iter-query">${escapeHtml(entry.query)}</div>
+            </div>
+            <div class="raw-result">${escapeHtml(entry.rawResult)}</div>
+            <div class="iter-summary">要約: ${escapeHtml(entry.summary)}</div>
+          `;
+          historyList.appendChild(div);
+        });
+      } catch {
+        error.textContent = '通信エラーが発生しました';
+        error.style.display = 'block';
+        result.style.display = 'none';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'リサーチ開始';
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+  </script>
+</body>
+</html>
