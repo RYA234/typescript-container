@@ -5,6 +5,7 @@ import inventoryAgentRouter from './inventory/router';
 import orderStatusRouter from './order-status/router';
 import unitConvertRouter from './unit-convert/router';
 import calendarRouter from './calendar/router';
+import creditCheckRouter from './credit-check/router';
 import estimateRouter from './estimate/router';
 import path from 'path';
 
@@ -40,7 +41,11 @@ router.get('/calendar', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'calendar', 'views', 'calendar-agent.html'));
 });
 router.use('/calendar', calendarRouter);
-router.get('/credit-check', placeholder('与信チェックエージェント'));
+// #73 与信チェックエージェント
+router.get('/credit-check', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'credit-check', 'views', 'credit-check-agent.html'));
+});
+router.use('/credit-check', creditCheckRouter);
 // #74 見積もり作成エージェント
 router.get('/estimate', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'estimate', 'views', 'estimate-agent.html'));

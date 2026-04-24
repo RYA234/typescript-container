@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>与信チェックエージェント</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    .header-links {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .header-links a {
+      font-size: 0.85rem;
+      color: #1a73e8;
+      text-decoration: none;
+      padding: 4px 10px;
+      border: 1px solid #1a73e8;
+      border-radius: 4px;
+    }
+    .header-links a:hover { background: #1a73e8; color: white; }
+
+    h1 { color: #1a73e8; font-size: 2rem; margin-bottom: 8px; }
+    .subtitle { color: #666; margin-bottom: 24px; }
+
+    .company-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+    }
+    .company-table th {
+      background: #1a73e8;
+      color: white;
+      padding: 8px 12px;
+      text-align: left;
+    }
+    .company-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #eee;
+    }
+    .company-table tr:hover td { background: #f0f6ff; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .badge-excellent { background: #e8f5e9; color: #2e7d32; }
+    .badge-approved  { background: #e3f2fd; color: #1565c0; }
+    .badge-partial   { background: #fff8e1; color: #f57f17; }
+    .badge-denied    { background: #fce4ec; color: #c62828; }
+    .badge-invalid   { background: #f3e5f5; color: #6a1b9a; }
+
+    .examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .example-btn {
+      background: #f0f6ff;
+      border: 1px solid #1a73e8;
+      color: #1a73e8;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .example-btn:hover { background: #1a73e8; color: white; }
+
+    .input-area {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 10px 14px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    input[type="text"]:focus { outline: none; border-color: #1a73e8; }
+    button.send-btn {
+      background: #1a73e8;
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.send-btn:hover { background: #1558b0; }
+    button.send-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    .result { display: none; }
+    .tool-log {
+      background: #f8f8f8;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .tool-log h3 { font-size: 0.85rem; color: #999; margin-bottom: 8px; }
+    .tool-entry {
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 4px;
+    }
+    .tool-name { color: #1a73e8; font-weight: 600; }
+
+    .answer-box {
+      background: #f0f6ff;
+      border-left: 4px solid #1a73e8;
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+    }
+    .answer-box p { white-space: pre-wrap; }
+
+    .loading { color: #999; font-style: italic; }
+    .error-msg { color: #dc3545; }
+    .exec-time { font-size: 0.8rem; color: #999; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-links">
+      <a href="/">← Back to Home</a>
+      <a href="https://github.com/RYA234/typescript-container/issues/73" target="_blank">GitHub Source #73</a>
+      <a href="https://github.com/RYA234/typescript-container/blob/main/.github/docs/features/agent/06-credit-check/internal-design.md" target="_blank">内部設計書</a>
+      <a href="https://github.com/RYA234/typescript-container/blob/main/.github/docs/features/agent/06-credit-check/operation-manual.md" target="_blank">運用マニュアル</a>
+    </div>
+
+    <h1>与信チェックエージェント</h1>
+    <p class="subtitle">Gemini Function Calling を使ってバリデーション→スコアリング→判定を自動実行します</p>
+
+    <table class="company-table">
+      <thead>
+        <tr><th>会社名</th><th>スコア</th><th>判定</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>株式会社サンプル</td><td>75</td><td><span class="badge badge-approved">承認</span></td></tr>
+        <tr><td>テスト商事株式会社</td><td>85</td><td><span class="badge badge-excellent">優良承認</span></td></tr>
+        <tr><td>有限会社デモ</td><td>55</td><td><span class="badge badge-partial">条件付き承認</span></td></tr>
+        <tr><td>株式会社不審</td><td>30</td><td><span class="badge badge-denied">否認</span></td></tr>
+        <tr><td>架空企業</td><td>-</td><td><span class="badge badge-invalid">invalid</span></td></tr>
+      </tbody>
+    </table>
+
+    <div class="examples">
+      <button class="example-btn" onclick="setExample('株式会社サンプルの与信チェックをお願いします')">株式会社サンプル</button>
+      <button class="example-btn" onclick="setExample('テスト商事株式会社の与信審査をしてください')">テスト商事株式会社</button>
+      <button class="example-btn" onclick="setExample('有限会社デモの与信チェックをして')">有限会社デモ</button>
+      <button class="example-btn" onclick="setExample('株式会社不審の与信チェックをお願いします')">株式会社不審</button>
+      <button class="example-btn" onclick="setExample('架空企業の与信チェックをして')">架空企業（invalid）</button>
+    </div>
+
+    <div class="input-area">
+      <input type="text" id="messageInput" placeholder="例：株式会社サンプルの与信チェックをお願いします" />
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">送信</button>
+    </div>
+
+    <div class="result" id="result">
+      <div class="tool-log" id="toolLog" style="display:none">
+        <h3>🔧 ツール呼び出しログ</h3>
+        <div id="toolEntries"></div>
+      </div>
+      <div class="answer-box">
+        <p id="answerText"></p>
+        <p class="exec-time" id="execTime"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setExample(text) {
+      document.getElementById('messageInput').value = text;
+      document.getElementById('messageInput').focus();
+    }
+
+    document.getElementById('messageInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value.trim();
+      if (!message) return;
+
+      const sendBtn = document.getElementById('sendBtn');
+      const result = document.getElementById('result');
+      const answerText = document.getElementById('answerText');
+      const toolLog = document.getElementById('toolLog');
+      const toolEntries = document.getElementById('toolEntries');
+      const execTime = document.getElementById('execTime');
+
+      sendBtn.disabled = true;
+      result.style.display = 'block';
+      toolLog.style.display = 'none';
+      toolEntries.innerHTML = '';
+      answerText.textContent = '考え中...';
+      answerText.className = 'loading';
+      execTime.textContent = '';
+
+      try {
+        const res = await fetch('/node/agent/credit-check/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          answerText.textContent = data.message || 'エラーが発生しました';
+          answerText.className = 'error-msg';
+          return;
+        }
+
+        if (data.toolsUsed && data.toolsUsed.length > 0) {
+          toolLog.style.display = 'block';
+          data.toolsUsed.forEach(tool => {
+            const entry = document.createElement('div');
+            entry.className = 'tool-entry';
+            entry.innerHTML = `<span class="tool-name">🔧 ${tool.name}</span>(${JSON.stringify(tool.input)}) → ${JSON.stringify(tool.output)}`;
+            toolEntries.appendChild(entry);
+          });
+        }
+
+        answerText.textContent = data.answer;
+        answerText.className = '';
+        execTime.textContent = `実行時間: ${data.executionTimeMs}ms`;
+      } catch {
+        answerText.textContent = 'ネットワークエラーが発生しました';
+        answerText.className = 'error-msg';
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
