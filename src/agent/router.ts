@@ -10,6 +10,7 @@ import estimateRouter from './estimate/router';
 import attendanceRouter from './attendance/router';
 import inquiryRoutingRouter from './inquiry-routing/router';
 import dataAggregationRouter from './data-aggregation/router';
+import ragAgentRouter from './rag-agent/router';
 import path from 'path';
 
 const router = Router();
@@ -69,7 +70,11 @@ router.get('/aggregate', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'data-aggregation', 'views', 'data-aggregation-agent.html'));
 });
 router.use('/aggregate', dataAggregationRouter);
-router.get('/rag', placeholder('RAG + エージェント連携'));
+// #78 RAG + エージェント連携
+router.get('/rag', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'rag-agent', 'views', 'rag-agent.html'));
+});
+router.use('/rag', ragAgentRouter);
 router.get('/langgraph', placeholder('LangGraphエージェント'));
 router.get('/research', placeholder('自律リサーチエージェント'));
 router.get('/multi', placeholder('マルチエージェント'));
