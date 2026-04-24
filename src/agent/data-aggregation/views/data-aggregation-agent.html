@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>データ集計エージェント</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #4a148c 0%, #7b1fa2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+    .header-links { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    .header-links a {
+      font-size: 0.85rem; color: #4a148c; text-decoration: none;
+      padding: 4px 10px; border: 1px solid #4a148c; border-radius: 4px;
+    }
+    .header-links a:hover { background: #4a148c; color: white; }
+    h1 { color: #4a148c; font-size: 2rem; margin-bottom: 8px; }
+    .subtitle { color: #666; margin-bottom: 24px; }
+    .data-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .data-card {
+      background: #f3e5f5; border-left: 4px solid #4a148c;
+      border-radius: 0 8px 8px 0; padding: 12px 16px;
+    }
+    .data-card h3 { font-size: 0.85rem; color: #4a148c; margin-bottom: 6px; }
+    .data-card p { font-size: 0.9rem; color: #555; }
+    .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .example-btn {
+      background: #f3e5f5; border: 1px solid #4a148c; color: #4a148c;
+      padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+    }
+    .example-btn:hover { background: #4a148c; color: white; }
+    .input-area { display: flex; gap: 8px; margin-bottom: 24px; }
+    input[type="text"] {
+      flex: 1; padding: 10px 14px; border: 2px solid #ddd;
+      border-radius: 8px; font-size: 0.95rem;
+    }
+    input[type="text"]:focus { outline: none; border-color: #4a148c; }
+    button.send-btn {
+      background: #4a148c; color: white; border: none;
+      padding: 10px 24px; border-radius: 8px; cursor: pointer; font-weight: 600;
+    }
+    button.send-btn:hover { background: #38006b; }
+    button.send-btn:disabled { background: #ccc; cursor: not-allowed; }
+    .result { display: none; }
+    .tool-log { background: #f8f8f8; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .tool-log h3 { font-size: 0.85rem; color: #999; margin-bottom: 8px; }
+    .tool-entry { font-family: monospace; font-size: 0.85rem; color: #555; margin-bottom: 4px; }
+    .tool-name { color: #4a148c; font-weight: 600; }
+    .answer-box { background: #f3e5f5; border-left: 4px solid #4a148c; padding: 16px; border-radius: 0 8px 8px 0; }
+    .answer-box p { white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; }
+    .loading { color: #999; font-style: italic; font-family: inherit; }
+    .error-msg { color: #dc3545; font-family: inherit; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-links">
+      <a href="/">← Back to Home</a>
+      <a href="https://github.com/RYA234/typescript-container/issues/77" target="_blank">GitHub Source #77</a>
+      <a href="https://github.com/RYA234/typescript-container/blob/main/.github/docs/features/agent/10-data-aggregation/internal-design.md" target="_blank">内部設計書</a>
+      <a href="https://github.com/RYA234/typescript-container/blob/main/.github/docs/features/agent/10-data-aggregation/operation-manual.md" target="_blank">運用マニュアル</a>
+    </div>
+
+    <h1>データ集計エージェント</h1>
+    <p class="subtitle">Gemini Function Calling を使って売上・在庫データを横断集計し月次レポートを自動生成します</p>
+
+    <div class="data-summary">
+      <div class="data-card">
+        <h3>売上データ（対応期間）</h3>
+        <p>2025-01: 1,250,000円（+5%）<br>2025-02: 980,000円（-22%）<br>2025-03: 1,450,000円（+48%）</p>
+      </div>
+      <div class="data-card">
+        <h3>在庫データ（5商品）</h3>
+        <p>ノートパソコン / マウス / キーボード<br>モニター / プリンター</p>
+      </div>
+    </div>
+
+    <div class="examples">
+      <button class="example-btn" onclick="setExample('2025年1月の売上と在庫のレポートを作成してください')">1月レポート</button>
+      <button class="example-btn" onclick="setExample('2025年2月の売上と在庫のレポートを作成してください')">2月レポート</button>
+      <button class="example-btn" onclick="setExample('2025年3月の売上と在庫のレポートを作成してください')">3月レポート</button>
+      <button class="example-btn" onclick="setExample('2025年1月と3月の売上を比較してレポートを作成してください')">1月vs3月比較</button>
+    </div>
+
+    <div class="input-area">
+      <input type="text" id="messageInput" placeholder="例：2025年1月の売上と在庫のレポートを作成してください" />
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">作成する</button>
+    </div>
+
+    <div class="result" id="result">
+      <div class="tool-log" id="toolLog" style="display:none">
+        <h3>🔧 ツール呼び出しログ</h3>
+        <div id="toolEntries"></div>
+      </div>
+      <div class="answer-box">
+        <p id="answerText"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setExample(text) {
+      document.getElementById('messageInput').value = text;
+      document.getElementById('messageInput').focus();
+    }
+    document.getElementById('messageInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value.trim();
+      if (!message) return;
+      const sendBtn = document.getElementById('sendBtn');
+      const result = document.getElementById('result');
+      const answerText = document.getElementById('answerText');
+      const toolLog = document.getElementById('toolLog');
+      const toolEntries = document.getElementById('toolEntries');
+      sendBtn.disabled = true;
+      result.style.display = 'block';
+      toolLog.style.display = 'none';
+      toolEntries.innerHTML = '';
+      answerText.textContent = '集計中...';
+      answerText.className = 'loading';
+      try {
+        const res = await fetch('/node/agent/aggregate/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          answerText.textContent = data.message || 'エラーが発生しました';
+          answerText.className = 'error-msg';
+          return;
+        }
+        if (data.toolCalls && data.toolCalls.length > 0) {
+          toolLog.style.display = 'block';
+          data.toolCalls.forEach(tool => {
+            const entry = document.createElement('div');
+            entry.className = 'tool-entry';
+            const resultPreview = tool.result.length > 80 ? tool.result.slice(0, 80) + '...' : tool.result;
+            entry.innerHTML = `<span class="tool-name">🔧 ${tool.name}</span>(${JSON.stringify(tool.args)}) → ${resultPreview}`;
+            toolEntries.appendChild(entry);
+          });
+        }
+        answerText.textContent = data.reply;
+        answerText.className = '';
+      } catch {
+        answerText.textContent = 'ネットワークエラーが発生しました';
+        answerText.className = 'error-msg';
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
