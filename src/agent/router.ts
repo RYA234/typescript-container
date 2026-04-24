@@ -13,6 +13,7 @@ import dataAggregationRouter from './data-aggregation/router';
 import ragAgentRouter from './rag-agent/router';
 import langGraphRouter from './langgraph/router';
 import researchRouter from './research/router';
+import multiAgentRouter from './multi-agent/router';
 import path from 'path';
 
 const router = Router();
@@ -87,7 +88,11 @@ router.get('/research', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'research', 'views', 'research-agent.html'));
 });
 router.use('/research', researchRouter);
-router.get('/multi', placeholder('マルチエージェント'));
+// #81 マルチエージェント
+router.get('/multi-agent', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'multi-agent', 'views', 'multi-agent.html'));
+});
+router.use('/multi-agent', multiAgentRouter);
 router.get('/credit-check-dotnet', placeholder('与信チェック + dotnet連携'));
 
 export default router;
