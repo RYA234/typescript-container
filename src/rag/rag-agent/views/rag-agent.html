@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAG + エージェント連携 - RAGデモ</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #bf360c 0%, #4a148c 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .page-header { text-align: center; color: white; margin-bottom: 24px; }
+    .page-header h1 { font-size: 1.8rem; margin-bottom: 6px; }
+    .page-header p { opacity: 0.85; font-size: 0.95rem; }
+
+    .header-links { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+
+    .back-link {
+      display: inline-block; color: white; text-decoration: none;
+      padding: 6px 14px; border: 1px solid white; border-radius: 6px;
+      font-size: 0.85rem; transition: all 0.2s;
+    }
+    .back-link:hover { background: white; color: #bf360c; }
+
+    .gh-link {
+      display: inline-flex; align-items: center; gap: 5px; color: white;
+      text-decoration: none; padding: 6px 14px; border: 1px solid rgba(255,255,255,0.6);
+      border-radius: 6px; font-size: 0.85rem; transition: all 0.2s; opacity: 0.85;
+    }
+    .gh-link:hover { background: white; color: #bf360c; opacity: 1; }
+
+    .card {
+      background: white; border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      padding: 20px; max-width: 800px; margin: 0 auto 16px;
+    }
+
+    .card h2 { font-size: 1rem; font-weight: 700; color: #bf360c; margin-bottom: 14px; }
+
+    .tools-list {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
+    }
+    .tool-badge {
+      padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;
+    }
+    .tool-search { background: #e3f2fd; color: #1565c0; }
+    .tool-date { background: #e8f5e9; color: #2e7d32; }
+    .tool-calc { background: #fff3e0; color: #e65100; }
+
+    .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .example-btn {
+      padding: 6px 12px; border: 1px solid #ffccbc; border-radius: 16px;
+      background: white; color: #bf360c; font-size: 0.82rem; cursor: pointer;
+      transition: all 0.2s; text-align: left;
+    }
+    .example-btn:hover { background: #fbe9e7; border-color: #bf360c; }
+
+    label { display: block; font-size: 0.85rem; font-weight: 600; color: #555; margin-bottom: 6px; }
+
+    .input-row { display: flex; gap: 10px; align-items: flex-end; }
+    .input-row .form-group { flex: 1; }
+
+    input[type="text"] {
+      width: 100%; padding: 10px 12px; border: 2px solid #ddd;
+      border-radius: 8px; font-size: 0.9rem; outline: none;
+      font-family: inherit; transition: border-color 0.2s;
+    }
+    input:focus { border-color: #bf360c; }
+
+    .btn {
+      padding: 10px 22px; border: none; border-radius: 8px;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-primary { background: #bf360c; color: white; }
+    .btn-primary:hover { background: #d84315; }
+    .btn-primary:disabled { background: #90a4ae; cursor: not-allowed; }
+
+    .result-area { margin-top: 16px; }
+
+    .tool-log {
+      background: #1e1e1e; border-radius: 8px; padding: 14px;
+      margin-bottom: 12px; font-family: 'Courier New', monospace; font-size: 0.82rem;
+    }
+    .tool-log-title { color: #888; margin-bottom: 8px; font-size: 0.8rem; }
+    .tool-entry { margin-bottom: 8px; }
+    .tool-name { color: #ce9178; font-weight: 600; }
+    .tool-result { color: #9cdcfe; margin-top: 2px; padding-left: 16px; }
+
+    .answer-box {
+      padding: 14px; border-radius: 8px; background: #fbe9e7;
+      border-left: 4px solid #bf360c; line-height: 1.7; font-size: 0.9rem;
+    }
+
+    .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .tag {
+      padding: 2px 10px; border-radius: 10px; font-size: 0.78rem; font-weight: 600;
+    }
+    .tag-tool { background: #ffccbc; color: #bf360c; }
+    .tag-time { background: #f5f5f5; color: #555; }
+
+    .search-results { margin-top: 10px; }
+    .search-result-item {
+      font-size: 0.8rem; color: #555; padding: 6px 10px;
+      background: #f5f5f5; border-radius: 6px; margin-top: 6px;
+    }
+
+    .info-box {
+      padding: 14px; border-radius: 8px; background: #e3f2fd;
+      border-left: 4px solid #1565c0; font-size: 0.9rem; color: #555;
+    }
+    .error-box {
+      padding: 14px; border-radius: 8px; background: #ffebee;
+      border-left: 4px solid #e53935; font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+<div style="max-width:800px;margin:0 auto;">
+  <div class="header-links">
+    <a href="/node" class="back-link">← Back to Home</a>
+    <a href="https://github.com/RYA234/typescript-container/issues/63" class="gh-link" target="_blank">GitHub #63</a>
+  </div>
+
+  <div class="page-header">
+    <h1>RAG + エージェント連携</h1>
+    <p>エージェントが自律的にツールを選択・実行して回答します</p>
+  </div>
+
+  <div class="card">
+    <h2>🤖 利用可能なツール</h2>
+    <div class="tools-list">
+      <span class="tool-badge tool-search">🔍 search_documents — 社内ドキュメントをRAG検索</span>
+      <span class="tool-badge tool-date">📅 get_current_date — 現在日時を取得</span>
+      <span class="tool-badge tool-calc">🔢 calculate — 算術計算を実行</span>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label>クエリ例</label>
+      <div class="examples">
+        <button class="example-btn" onclick="setExample(this)">有給休暇の申請方法を教えて</button>
+        <button class="example-btn" onclick="setExample(this)">今日の日付と就業時間を教えて</button>
+        <button class="example-btn" onclick="setExample(this)">残業上限は月何時間？年間換算すると？</button>
+        <button class="example-btn" onclick="setExample(this)">交通費の上限と、年間で最大いくら支給される？</button>
+      </div>
+    </div>
+
+    <div class="input-row">
+      <div class="form-group">
+        <label>質問</label>
+        <input type="text" id="messageInput" placeholder="例: 有給の申請方法と残日数の計算方法を教えて">
+      </div>
+      <button class="btn btn-primary" id="sendBtn" onclick="doChat()">質問する</button>
+    </div>
+
+    <div class="result-area" id="resultArea"></div>
+  </div>
+</div>
+
+<script>
+  function escape(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function setExample(btn) {
+    document.getElementById('messageInput').value = btn.textContent;
+  }
+
+  document.getElementById('messageInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doChat();
+  });
+
+  async function doChat() {
+    const message = document.getElementById('messageInput').value.trim();
+    const resultEl = document.getElementById('resultArea');
+    const btn = document.getElementById('sendBtn');
+
+    if (!message) {
+      resultEl.innerHTML = '<div class="error-box">質問を入力してください</div>';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '処理中...';
+    resultEl.innerHTML = '<div class="info-box">エージェントが処理中です... ツール呼び出しが発生する場合があります</div>';
+
+    try {
+      const res = await fetch('/node/rag/agent/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        resultEl.innerHTML = `<div class="error-box">${escape(data.message)}</div>`;
+        return;
+      }
+
+      // ツールログ
+      const toolLogHtml = data.toolsUsed.length > 0
+        ? `<div class="tool-log">
+            <div class="tool-log-title">エージェント処理ログ</div>
+            ${data.toolsUsed.map((t, i) =>
+              `<div class="tool-entry">
+                <div class="tool-name">[${i + 1}] ${escape(t)}</div>
+              </div>`
+            ).join('')}
+          </div>`
+        : '';
+
+      // 検索結果
+      const searchHtml = data.searchResults.length > 0
+        ? `<div class="search-results">
+            <strong style="font-size:0.82rem;color:#555;">RAG検索結果 (${data.searchResults.length}件)</strong>
+            ${data.searchResults.map(r =>
+              `<div class="search-result-item">
+                類似度: ${(r.similarity * 100).toFixed(1)}% | 出典: ${escape(r.source)}<br>
+                ${escape(r.content.substring(0, 120))}...
+              </div>`
+            ).join('')}
+          </div>`
+        : '';
+
+      resultEl.innerHTML = `
+        ${toolLogHtml}
+        <div class="answer-box">
+          <div class="tags">
+            ${data.toolsUsed.map(t => `<span class="tag tag-tool">${escape(t)}</span>`).join('')}
+            <span class="tag tag-time">${data.executionTimeMs}ms</span>
+          </div>
+          <div>${escape(data.answer).replace(/\n/g, '<br>')}</div>
+          ${searchHtml}
+        </div>`;
+    } catch {
+      resultEl.innerHTML = '<div class="error-box">通信エラーが発生しました</div>';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '質問する';
+    }
+  }
+</script>
+</body>
+</html>
