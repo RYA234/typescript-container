@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>カテゴリ別フィルタリング - RAGデモ</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #0d47a1 0%, #1b5e20 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .page-header { text-align: center; color: white; margin-bottom: 24px; }
+    .page-header h1 { font-size: 1.8rem; margin-bottom: 6px; }
+    .page-header p { opacity: 0.85; font-size: 0.95rem; }
+
+    .header-links { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+
+    .back-link {
+      display: inline-block; color: white; text-decoration: none;
+      padding: 6px 14px; border: 1px solid white; border-radius: 6px;
+      font-size: 0.85rem; transition: all 0.2s;
+    }
+    .back-link:hover { background: white; color: #0d47a1; }
+
+    .gh-link {
+      display: inline-flex; align-items: center; gap: 5px; color: white;
+      text-decoration: none; padding: 6px 14px; border: 1px solid rgba(255,255,255,0.6);
+      border-radius: 6px; font-size: 0.85rem; transition: all 0.2s; opacity: 0.85;
+    }
+    .gh-link:hover { background: white; color: #0d47a1; opacity: 1; }
+
+    .card {
+      background: white; border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      padding: 20px; max-width: 800px; margin: 0 auto 16px;
+    }
+
+    .card h2 { font-size: 1rem; font-weight: 700; color: #0d47a1; margin-bottom: 14px; }
+
+    .category-group {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;
+    }
+
+    .category-label {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border: 2px solid #ddd; border-radius: 20px;
+      cursor: pointer; font-size: 0.9rem; transition: all 0.2s;
+    }
+    .category-label:hover { border-color: #0d47a1; }
+    .category-label input[type="radio"] { display: none; }
+    .category-label.selected { border-color: #0d47a1; background: #e3f2fd; font-weight: 600; }
+
+    .category-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 0.75rem; font-weight: 600;
+    }
+    .badge-sales { background: #fff3e0; color: #e65100; }
+    .badge-hr { background: #fce4ec; color: #c62828; }
+    .badge-accounting { background: #e8f5e9; color: #1b5e20; }
+    .badge-it { background: #e3f2fd; color: #0d47a1; }
+    .badge-general { background: #f3e5f5; color: #6a1b9a; }
+
+    input[type="text"] {
+      width: 100%; padding: 10px 12px; border: 2px solid #ddd;
+      border-radius: 8px; font-size: 0.9rem; outline: none;
+      font-family: inherit; transition: border-color 0.2s;
+    }
+    input:focus { border-color: #0d47a1; }
+
+    label { display: block; font-size: 0.85rem; font-weight: 600; color: #555; margin-bottom: 6px; }
+
+    textarea {
+      width: 100%; padding: 10px 12px; border: 2px solid #ddd;
+      border-radius: 8px; font-size: 0.9rem; resize: vertical;
+      outline: none; font-family: inherit; min-height: 80px; transition: border-color 0.2s;
+    }
+    textarea:focus { border-color: #0d47a1; }
+
+    .form-group { margin-bottom: 14px; }
+
+    .btn {
+      padding: 10px 22px; border: none; border-radius: 8px;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: #0d47a1; color: white; }
+    .btn-primary:hover { background: #1565c0; }
+    .btn-primary:disabled { background: #90a4ae; cursor: not-allowed; }
+    .btn-danger { background: #c62828; color: white; font-size: 0.8rem; padding: 6px 14px; }
+    .btn-danger:hover { background: #d32f2f; }
+
+    .row { display: flex; gap: 10px; align-items: flex-end; }
+    .row .form-group { flex: 1; }
+
+    .result-box {
+      margin-top: 14px; padding: 14px; border-radius: 8px;
+      font-size: 0.9rem; line-height: 1.6;
+    }
+    .result-box.success { background: #e8f5e9; border-left: 4px solid #43a047; }
+    .result-box.error { background: #ffebee; border-left: 4px solid #e53935; }
+    .result-box.info { background: #e3f2fd; border-left: 4px solid #1e88e5; }
+
+    .sources { margin-top: 12px; }
+    .source-item {
+      font-size: 0.82rem; color: #555; margin-top: 6px;
+      padding: 8px 10px; background: #f5f5f5; border-radius: 6px;
+    }
+
+    .filter-tag {
+      display: inline-block; margin-bottom: 8px;
+      padding: 3px 10px; border-radius: 10px; font-size: 0.8rem; font-weight: 600;
+      background: #e3f2fd; color: #0d47a1;
+    }
+
+    .hidden { display: none; }
+    .meta { font-size: 0.8rem; color: #888; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+<div style="max-width:800px;margin:0 auto;">
+  <div class="header-links">
+    <a href="/node" class="back-link">← Back to Home</a>
+    <a href="https://github.com/RYA234/typescript-container/issues/59" class="gh-link" target="_blank">GitHub #59</a>
+  </div>
+
+  <div class="page-header">
+    <h1>カテゴリ別フィルタリング検索</h1>
+    <p>部門カテゴリを指定してドキュメントを絞り込み検索します</p>
+  </div>
+
+  <!-- 登録カード（開発環境のみ表示） -->
+  <div class="card" id="ingestCard">
+    <h2>📥 ドキュメント登録</h2>
+    <div class="form-group">
+      <label>カテゴリ</label>
+      <div class="category-group" id="ingestCategoryGroup">
+        <label class="category-label selected" data-value="sales">
+          <input type="radio" name="ingestCategory" value="sales" checked>
+          <span class="category-badge badge-sales">sales</span> 営業
+        </label>
+        <label class="category-label" data-value="hr">
+          <input type="radio" name="ingestCategory" value="hr">
+          <span class="category-badge badge-hr">hr</span> 人事
+        </label>
+        <label class="category-label" data-value="accounting">
+          <input type="radio" name="ingestCategory" value="accounting">
+          <span class="category-badge badge-accounting">accounting</span> 経理
+        </label>
+        <label class="category-label" data-value="it">
+          <input type="radio" name="ingestCategory" value="it">
+          <span class="category-badge badge-it">IT</span> IT
+        </label>
+        <label class="category-label" data-value="general">
+          <input type="radio" name="ingestCategory" value="general">
+          <span class="category-badge badge-general">general</span> 総務
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>部門名（任意）</label>
+      <input type="text" id="ingestDept" placeholder="例: 営業部、東京本社 など">
+    </div>
+    <div class="form-group">
+      <label>ドキュメント本文</label>
+      <textarea id="ingestText" placeholder="登録するドキュメントのテキストを入力..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <button class="btn btn-primary" onclick="doIngest()">登録</button>
+      <button class="btn btn-danger" onclick="doDelete()">全件削除</button>
+    </div>
+    <div id="ingestResult"></div>
+  </div>
+
+  <!-- クエリカード -->
+  <div class="card">
+    <h2>🔍 カテゴリ指定で質問</h2>
+    <div class="form-group">
+      <label>カテゴリ選択</label>
+      <div class="category-group" id="queryCategoryGroup">
+        <label class="category-label selected" data-value="sales">
+          <input type="radio" name="queryCategory" value="sales" checked>
+          <span class="category-badge badge-sales">sales</span> 営業
+        </label>
+        <label class="category-label" data-value="hr">
+          <input type="radio" name="queryCategory" value="hr">
+          <span class="category-badge badge-hr">hr</span> 人事
+        </label>
+        <label class="category-label" data-value="accounting">
+          <input type="radio" name="queryCategory" value="accounting">
+          <span class="category-badge badge-accounting">accounting</span> 経理
+        </label>
+        <label class="category-label" data-value="it">
+          <input type="radio" name="queryCategory" value="it">
+          <span class="category-badge badge-it">IT</span> IT
+        </label>
+        <label class="category-label" data-value="general">
+          <input type="radio" name="queryCategory" value="general">
+          <span class="category-badge badge-general">general</span> 総務
+        </label>
+      </div>
+    </div>
+    <div class="row">
+      <div class="form-group">
+        <label>質問</label>
+        <input type="text" id="queryQuestion" placeholder="例: 経費精算の上限は？">
+      </div>
+      <button class="btn btn-primary" onclick="doQuery()" style="margin-bottom:14px;">質問する</button>
+    </div>
+    <div id="queryResult"></div>
+  </div>
+</div>
+
+<script>
+  // カテゴリラジオボタンのUI
+  function initCategoryGroup(groupId) {
+    const group = document.getElementById(groupId);
+    group.querySelectorAll('.category-label').forEach(label => {
+      label.addEventListener('click', () => {
+        group.querySelectorAll('.category-label').forEach(l => l.classList.remove('selected'));
+        label.classList.add('selected');
+        label.querySelector('input').checked = true;
+      });
+    });
+  }
+  initCategoryGroup('ingestCategoryGroup');
+  initCategoryGroup('queryCategoryGroup');
+
+  // 本番では登録カードを非表示
+  async function checkConfig() {
+    try {
+      const res = await fetch('/node/rag/category-filter/config');
+      const data = await res.json();
+      if (!data.writeEnabled) {
+        document.getElementById('ingestCard').classList.add('hidden');
+      }
+    } catch {}
+  }
+  checkConfig();
+
+  function escape(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function doIngest() {
+    const text = document.getElementById('ingestText').value.trim();
+    const category = document.querySelector('input[name="ingestCategory"]:checked')?.value;
+    const department = document.getElementById('ingestDept').value.trim();
+    const resultEl = document.getElementById('ingestResult');
+
+    if (!text) { resultEl.innerHTML = '<div class="result-box error">テキストを入力してください</div>'; return; }
+
+    resultEl.innerHTML = '<div class="result-box info">登録中...</div>';
+    try {
+      const res = await fetch('/node/rag/category-filter/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, category, department: department || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        resultEl.innerHTML = `<div class="result-box error">${escape(data.message)}</div>`;
+      } else {
+        resultEl.innerHTML = `<div class="result-box success">✅ 登録完了（${data.chunkCount}チャンク、カテゴリ: ${escape(data.category)}、${data.executionTimeMs}ms）</div>`;
+        document.getElementById('ingestText').value = '';
+      }
+    } catch {
+      resultEl.innerHTML = '<div class="result-box error">通信エラーが発生しました</div>';
+    }
+  }
+
+  async function doDelete() {
+    if (!confirm('すべてのドキュメントを削除しますか？')) return;
+    const resultEl = document.getElementById('ingestResult');
+    try {
+      const res = await fetch('/node/rag/category-filter/documents', { method: 'DELETE' });
+      const data = await res.json();
+      resultEl.innerHTML = `<div class="result-box info">${escape(data.message)}</div>`;
+    } catch {
+      resultEl.innerHTML = '<div class="result-box error">削除エラーが発生しました</div>';
+    }
+  }
+
+  async function doQuery() {
+    const question = document.getElementById('queryQuestion').value.trim();
+    const category = document.querySelector('input[name="queryCategory"]:checked')?.value;
+    const resultEl = document.getElementById('queryResult');
+
+    if (!question) { resultEl.innerHTML = '<div class="result-box error">質問を入力してください</div>'; return; }
+
+    resultEl.innerHTML = '<div class="result-box info">検索中...</div>';
+    try {
+      const res = await fetch('/node/rag/category-filter/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, category }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        resultEl.innerHTML = `<div class="result-box error">${escape(data.message)}</div>`;
+      } else {
+        const sourcesHtml = data.sources.length > 0
+          ? `<div class="sources">
+              <strong style="font-size:0.82rem;color:#555;">参照元 (${data.sources.length}件)</strong>
+              ${data.sources.map(s =>
+                `<div class="source-item">類似度: ${(s.similarity * 100).toFixed(1)}%${s.department ? ' | 部門: ' + escape(s.department) : ''}<br>${escape(s.content.substring(0, 120))}...</div>`
+              ).join('')}
+            </div>`
+          : '';
+        resultEl.innerHTML = `
+          <div class="result-box success">
+            <div class="filter-tag">カテゴリ: ${escape(data.filteredBy)}</div>
+            <div>${escape(data.answer).replace(/\n/g, '<br>')}</div>
+            ${sourcesHtml}
+            <div class="meta">処理時間: ${data.executionTimeMs}ms</div>
+          </div>`;
+      }
+    } catch {
+      resultEl.innerHTML = '<div class="result-box error">通信エラーが発生しました</div>';
+    }
+  }
+
+  // Enterキーで質問実行
+  document.getElementById('queryQuestion').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doQuery();
+  });
+</script>
+</body>
+</html>
