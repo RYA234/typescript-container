@@ -6,6 +6,7 @@ import faqRouter from './faq/router';
 import glossaryRouter from './glossary/router';
 import recipeRouter from './recipe/router';
 import multiDocRouter from './multi-doc/router';
+import categoryFilterRouter from './category-filter/router';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 
@@ -67,7 +68,11 @@ router.get('/multi-doc', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'multi-doc', 'views', 'multi-doc.html'));
 });
 router.use('/multi-doc', multiDocRouter);
-router.get('/category-filter', placeholder('カテゴリ別フィルタリング'));
+// #59 カテゴリ別フィルタリング
+router.get('/category-filter', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'category-filter', 'views', 'category-filter.html'));
+});
+router.use('/category-filter', categoryFilterRouter);
 router.get('/date-filter', placeholder('日付範囲フィルタリング'));
 router.get('/pdf', placeholder('PDFドキュメント取り込み'));
 router.get('/chat-history', placeholder('会話履歴検索'));
