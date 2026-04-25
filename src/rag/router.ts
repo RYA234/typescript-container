@@ -7,6 +7,7 @@ import glossaryRouter from './glossary/router';
 import recipeRouter from './recipe/router';
 import multiDocRouter from './multi-doc/router';
 import categoryFilterRouter from './category-filter/router';
+import dateFilterRouter from './date-filter/router';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 
@@ -73,7 +74,11 @@ router.get('/category-filter', (_req, res) => {
   res.sendFile(path.join(__dirname, 'category-filter', 'views', 'category-filter.html'));
 });
 router.use('/category-filter', categoryFilterRouter);
-router.get('/date-filter', placeholder('日付範囲フィルタリング'));
+// #60 日付範囲フィルタリング
+router.get('/date-filter', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'date-filter', 'views', 'date-filter.html'));
+});
+router.use('/date-filter', dateFilterRouter);
 router.get('/pdf', placeholder('PDFドキュメント取り込み'));
 router.get('/chat-history', placeholder('会話履歴検索'));
 router.get('/agent', placeholder('RAG + エージェント連携'));
