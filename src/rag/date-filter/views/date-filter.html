@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>日付範囲フィルタリング - RAGデモ</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #4a148c 0%, #1a237e 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .page-header { text-align: center; color: white; margin-bottom: 24px; }
+    .page-header h1 { font-size: 1.8rem; margin-bottom: 6px; }
+    .page-header p { opacity: 0.85; font-size: 0.95rem; }
+
+    .header-links { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+
+    .back-link {
+      display: inline-block; color: white; text-decoration: none;
+      padding: 6px 14px; border: 1px solid white; border-radius: 6px;
+      font-size: 0.85rem; transition: all 0.2s;
+    }
+    .back-link:hover { background: white; color: #4a148c; }
+
+    .gh-link {
+      display: inline-flex; align-items: center; gap: 5px; color: white;
+      text-decoration: none; padding: 6px 14px; border: 1px solid rgba(255,255,255,0.6);
+      border-radius: 6px; font-size: 0.85rem; transition: all 0.2s; opacity: 0.85;
+    }
+    .gh-link:hover { background: white; color: #4a148c; opacity: 1; }
+
+    .card {
+      background: white; border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      padding: 20px; max-width: 800px; margin: 0 auto 16px;
+    }
+
+    .card h2 { font-size: 1rem; font-weight: 700; color: #4a148c; margin-bottom: 14px; }
+
+    label { display: block; font-size: 0.85rem; font-weight: 600; color: #555; margin-bottom: 6px; }
+
+    input[type="text"], input[type="date"] {
+      width: 100%; padding: 10px 12px; border: 2px solid #ddd;
+      border-radius: 8px; font-size: 0.9rem; outline: none;
+      font-family: inherit; transition: border-color 0.2s;
+    }
+    input:focus { border-color: #4a148c; }
+
+    textarea {
+      width: 100%; padding: 10px 12px; border: 2px solid #ddd;
+      border-radius: 8px; font-size: 0.9rem; resize: vertical;
+      outline: none; font-family: inherit; min-height: 80px; transition: border-color 0.2s;
+    }
+    textarea:focus { border-color: #4a148c; }
+
+    .form-group { margin-bottom: 14px; }
+
+    .date-row { display: flex; gap: 12px; }
+    .date-row .form-group { flex: 1; }
+
+    .shortcuts { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .shortcut-btn {
+      padding: 6px 12px; border: 1px solid #ce93d8; border-radius: 16px;
+      background: white; color: #7b1fa2; font-size: 0.82rem; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .shortcut-btn:hover { background: #f3e5f5; border-color: #7b1fa2; }
+
+    .btn {
+      padding: 10px 22px; border: none; border-radius: 8px;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-primary { background: #4a148c; color: white; }
+    .btn-primary:hover { background: #6a1b9a; }
+    .btn-danger { background: #c62828; color: white; font-size: 0.8rem; padding: 6px 14px; }
+    .btn-danger:hover { background: #d32f2f; }
+
+    .query-row { display: flex; gap: 10px; align-items: flex-end; }
+    .query-row .form-group { flex: 1; }
+
+    .result-box {
+      margin-top: 14px; padding: 14px; border-radius: 8px;
+      font-size: 0.9rem; line-height: 1.6;
+    }
+    .result-box.success { background: #f3e5f5; border-left: 4px solid #8e24aa; }
+    .result-box.error { background: #ffebee; border-left: 4px solid #e53935; }
+    .result-box.info { background: #ede7f6; border-left: 4px solid #5e35b1; }
+
+    .date-range-tag {
+      display: inline-block; margin-bottom: 8px;
+      padding: 3px 10px; border-radius: 10px; font-size: 0.8rem; font-weight: 600;
+      background: #ede7f6; color: #4a148c;
+    }
+
+    .sources { margin-top: 12px; }
+    .source-item {
+      font-size: 0.82rem; color: #555; margin-top: 6px;
+      padding: 8px 10px; background: #f5f5f5; border-radius: 6px;
+    }
+    .source-date { color: #7b1fa2; font-weight: 600; }
+
+    .meta { font-size: 0.8rem; color: #888; margin-top: 8px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+<div style="max-width:800px;margin:0 auto;">
+  <div class="header-links">
+    <a href="/node" class="back-link">← Back to Home</a>
+    <a href="https://github.com/RYA234/typescript-container/issues/60" class="gh-link" target="_blank">GitHub #60</a>
+  </div>
+
+  <div class="page-header">
+    <h1>日付範囲フィルタリング検索</h1>
+    <p>ドキュメントの日付で絞り込み、最新情報のみを参照して回答します</p>
+  </div>
+
+  <!-- 登録カード（開発環境のみ） -->
+  <div class="card" id="ingestCard">
+    <h2>📥 ドキュメント登録</h2>
+    <div class="form-group">
+      <label>ドキュメント日付</label>
+      <input type="date" id="ingestDate">
+    </div>
+    <div class="form-group">
+      <label>タイトル（任意）</label>
+      <input type="text" id="ingestTitle" placeholder="例: 就業規則 2026年改定">
+    </div>
+    <div class="form-group">
+      <label>ドキュメント本文</label>
+      <textarea id="ingestText" placeholder="登録するドキュメントのテキストを入力..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <button class="btn btn-primary" onclick="doIngest()">登録</button>
+      <button class="btn btn-danger" onclick="doDelete()">全件削除</button>
+    </div>
+    <div id="ingestResult"></div>
+  </div>
+
+  <!-- クエリカード -->
+  <div class="card">
+    <h2>🔍 日付範囲を指定して質問</h2>
+    <div class="form-group">
+      <label>期間ショートカット</label>
+      <div class="shortcuts">
+        <button class="shortcut-btn" onclick="setRange(1)">直近1ヶ月</button>
+        <button class="shortcut-btn" onclick="setRange(3)">直近3ヶ月</button>
+        <button class="shortcut-btn" onclick="setRange(6)">直近6ヶ月</button>
+        <button class="shortcut-btn" onclick="setThisYear()">今年</button>
+        <button class="shortcut-btn" onclick="setLastYear()">昨年</button>
+      </div>
+    </div>
+    <div class="date-row">
+      <div class="form-group">
+        <label>開始日</label>
+        <input type="date" id="dateFrom">
+      </div>
+      <div class="form-group">
+        <label>終了日</label>
+        <input type="date" id="dateTo">
+      </div>
+    </div>
+    <div class="query-row">
+      <div class="form-group">
+        <label>質問</label>
+        <input type="text" id="queryQuestion" placeholder="例: 最新の有給ルールは？">
+      </div>
+      <button class="btn btn-primary" onclick="doQuery()" style="margin-bottom:14px;">質問する</button>
+    </div>
+    <div id="queryResult"></div>
+  </div>
+</div>
+
+<script>
+  // 初期値：今年
+  const today = new Date();
+  document.getElementById('ingestDate').value = today.toISOString().slice(0, 10);
+  setThisYear();
+
+  function toDateStr(d) {
+    return d.toISOString().slice(0, 10);
+  }
+
+  function setRange(months) {
+    const to = new Date();
+    const from = new Date();
+    from.setMonth(from.getMonth() - months);
+    document.getElementById('dateFrom').value = toDateStr(from);
+    document.getElementById('dateTo').value = toDateStr(to);
+  }
+
+  function setThisYear() {
+    const year = today.getFullYear();
+    document.getElementById('dateFrom').value = `${year}-01-01`;
+    document.getElementById('dateTo').value = `${year}-12-31`;
+  }
+
+  function setLastYear() {
+    const year = today.getFullYear() - 1;
+    document.getElementById('dateFrom').value = `${year}-01-01`;
+    document.getElementById('dateTo').value = `${year}-12-31`;
+  }
+
+  async function checkConfig() {
+    try {
+      const res = await fetch('/node/rag/date-filter/config');
+      const data = await res.json();
+      if (!data.writeEnabled) {
+        document.getElementById('ingestCard').classList.add('hidden');
+      }
+    } catch {}
+  }
+  checkConfig();
+
+  function escape(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function doIngest() {
+    const text = document.getElementById('ingestText').value.trim();
+    const documentDate = document.getElementById('ingestDate').value;
+    const title = document.getElementById('ingestTitle').value.trim();
+    const resultEl = document.getElementById('ingestResult');
+
+    if (!text) { resultEl.innerHTML = '<div class="result-box error">テキストを入力してください</div>'; return; }
+    if (!documentDate) { resultEl.innerHTML = '<div class="result-box error">ドキュメント日付を指定してください</div>'; return; }
+
+    resultEl.innerHTML = '<div class="result-box info">登録中...</div>';
+    try {
+      const res = await fetch('/node/rag/date-filter/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, documentDate, title: title || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        resultEl.innerHTML = `<div class="result-box error">${escape(data.message)}</div>`;
+      } else {
+        resultEl.innerHTML = `<div class="result-box success">✅ 登録完了（${data.chunkCount}チャンク、日付: ${escape(data.documentDate)}、${data.executionTimeMs}ms）</div>`;
+        document.getElementById('ingestText').value = '';
+        document.getElementById('ingestTitle').value = '';
+      }
+    } catch {
+      resultEl.innerHTML = '<div class="result-box error">通信エラーが発生しました</div>';
+    }
+  }
+
+  async function doDelete() {
+    if (!confirm('すべてのドキュメントを削除しますか？')) return;
+    const resultEl = document.getElementById('ingestResult');
+    try {
+      const res = await fetch('/node/rag/date-filter/documents', { method: 'DELETE' });
+      const data = await res.json();
+      resultEl.innerHTML = `<div class="result-box info">${escape(data.message)}</div>`;
+    } catch {
+      resultEl.innerHTML = '<div class="result-box error">削除エラーが発生しました</div>';
+    }
+  }
+
+  async function doQuery() {
+    const question = document.getElementById('queryQuestion').value.trim();
+    const dateFrom = document.getElementById('dateFrom').value;
+    const dateTo = document.getElementById('dateTo').value;
+    const resultEl = document.getElementById('queryResult');
+
+    if (!question) { resultEl.innerHTML = '<div class="result-box error">質問を入力してください</div>'; return; }
+    if (!dateFrom || !dateTo) { resultEl.innerHTML = '<div class="result-box error">検索期間を指定してください</div>'; return; }
+
+    resultEl.innerHTML = '<div class="result-box info">検索中...</div>';
+    try {
+      const res = await fetch('/node/rag/date-filter/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, dateFrom, dateTo }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        resultEl.innerHTML = `<div class="result-box error">${escape(data.message)}</div>`;
+      } else {
+        const sourcesHtml = data.sources.length > 0
+          ? `<div class="sources">
+              <strong style="font-size:0.82rem;color:#555;">参照元 (${data.sources.length}件)</strong>
+              ${data.sources.map(s =>
+                `<div class="source-item">
+                  <span class="source-date">${escape(s.documentDate)}</span>${s.title ? ' | ' + escape(s.title) : ''} | 類似度: ${(s.similarity * 100).toFixed(1)}%
+                  <br>${escape(s.content.substring(0, 120))}...
+                </div>`
+              ).join('')}
+            </div>`
+          : '';
+        resultEl.innerHTML = `
+          <div class="result-box success">
+            <div class="date-range-tag">期間: ${escape(data.dateRange.from)} 〜 ${escape(data.dateRange.to)}</div>
+            <div>${escape(data.answer).replace(/\n/g, '<br>')}</div>
+            ${sourcesHtml}
+            <div class="meta">処理時間: ${data.executionTimeMs}ms</div>
+          </div>`;
+      }
+    } catch {
+      resultEl.innerHTML = '<div class="result-box error">通信エラーが発生しました</div>';
+    }
+  }
+
+  document.getElementById('queryQuestion').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doQuery();
+  });
+</script>
+</body>
+</html>
