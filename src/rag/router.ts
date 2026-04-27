@@ -8,6 +8,7 @@ import recipeRouter from './recipe/router';
 import multiDocRouter from './multi-doc/router';
 import categoryFilterRouter from './category-filter/router';
 import dateFilterRouter from './date-filter/router';
+import ragAgentRouter from './rag-agent/router';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 
@@ -81,7 +82,11 @@ router.get('/date-filter', (_req, res) => {
 router.use('/date-filter', dateFilterRouter);
 router.get('/pdf', placeholder('PDFドキュメント取り込み'));
 router.get('/chat-history', placeholder('会話履歴検索'));
-router.get('/agent', placeholder('RAG + エージェント連携'));
+// #63 RAG + エージェント連携
+router.get('/agent', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'rag-agent', 'views', 'rag-agent.html'));
+});
+router.use('/agent', ragAgentRouter);
 router.get('/score', placeholder('根拠スコア表示'));
 router.get('/eval', placeholder('LangSmith + Ragas評価'));
 router.get('/hybrid', placeholder('ハイブリッド検索'));
