@@ -12,6 +12,7 @@ import ragAgentRouter from './rag-agent/router';
 import pdfRouter from './pdf/router';
 import chatHistoryRouter from './chat-history/router';
 import scoredRouter from './score-display/router';
+import evalRouter from './langsmith-ragas/router';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 
@@ -103,7 +104,11 @@ router.get('/score', (_req, res) => {
   res.sendFile(path.join(__dirname, 'score-display', 'views', 'score-display.html'));
 });
 router.use('/scored', scoredRouter);
-router.get('/eval', placeholder('LangSmith + Ragas評価'));
+// #65 LangSmith + Ragas評価
+router.get('/eval', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'langsmith-ragas', 'views', 'langsmith-ragas.html'));
+});
+router.use('/eval', evalRouter);
 router.get('/hybrid', placeholder('ハイブリッド検索'));
 router.get('/multimodal', placeholder('マルチモーダルRAG'));
 
