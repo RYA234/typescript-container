@@ -10,6 +10,7 @@ import categoryFilterRouter from './category-filter/router';
 import dateFilterRouter from './date-filter/router';
 import ragAgentRouter from './rag-agent/router';
 import pdfRouter from './pdf/router';
+import chatHistoryRouter from './chat-history/router';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 
@@ -86,7 +87,11 @@ router.get('/pdf', (_req, res) => {
   res.sendFile(path.join(__dirname, 'pdf', 'views', 'pdf.html'));
 });
 router.use('/pdf', pdfRouter);
-router.get('/chat-history', placeholder('会話履歴検索'));
+// #62 会話履歴検索
+router.get('/chat-history', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'chat-history', 'views', 'chat-history.html'));
+});
+router.use('/chat', chatHistoryRouter);
 // #63 RAG + エージェント連携
 router.get('/agent', (_req, res) => {
   res.sendFile(path.join(__dirname, 'rag-agent', 'views', 'rag-agent.html'));

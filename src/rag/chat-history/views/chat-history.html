@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>会話履歴検索 - RAGデモ</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #1a237e 0%, #4a148c 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .page-header { text-align: center; color: white; margin-bottom: 24px; }
+    .page-header h1 { font-size: 1.8rem; margin-bottom: 6px; }
+    .page-header p { opacity: 0.85; font-size: 0.95rem; }
+
+    .header-links { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+
+    .back-link {
+      display: inline-block; color: white; text-decoration: none;
+      padding: 6px 14px; border: 1px solid white; border-radius: 6px;
+      font-size: 0.85rem; transition: all 0.2s;
+    }
+    .back-link:hover { background: white; color: #1a237e; }
+
+    .gh-link {
+      display: inline-flex; align-items: center; gap: 5px; color: white;
+      text-decoration: none; padding: 6px 14px; border: 1px solid rgba(255,255,255,0.6);
+      border-radius: 6px; font-size: 0.85rem; transition: all 0.2s; opacity: 0.85;
+    }
+    .gh-link:hover { background: white; color: #1a237e; opacity: 1; }
+
+    .container { max-width: 800px; margin: 0 auto; }
+
+    .card {
+      background: white; border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      padding: 20px; margin-bottom: 16px;
+    }
+
+    .card h2 { font-size: 1rem; font-weight: 700; color: #1a237e; margin-bottom: 14px; }
+
+    label { display: block; font-size: 0.85rem; font-weight: 600; color: #555; margin-bottom: 5px; }
+
+    input[type="text"], textarea, select {
+      width: 100%; padding: 10px 12px; border: 2px solid #ddd;
+      border-radius: 8px; font-size: 0.9rem; outline: none;
+      font-family: inherit; transition: border-color 0.2s;
+    }
+    input:focus, textarea:focus, select:focus { border-color: #1a237e; }
+    textarea { resize: vertical; min-height: 80px; }
+
+    .form-group { margin-bottom: 12px; }
+
+    .form-row { display: flex; gap: 10px; }
+    .form-row .form-group { flex: 1; }
+
+    .btn {
+      padding: 10px 22px; border: none; border-radius: 8px;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-primary { background: #1a237e; color: white; }
+    .btn-primary:hover { background: #283593; }
+    .btn-primary:disabled { background: #90a4ae; cursor: not-allowed; }
+    .btn-danger { background: #c62828; color: white; font-size: 0.8rem; padding: 6px 14px; }
+    .btn-danger:hover { background: #d32f2f; }
+
+    .channel-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+    .channel-tab {
+      padding: 4px 12px; border-radius: 12px; font-size: 0.82rem; cursor: pointer;
+      border: 1px solid #ddd; background: white; transition: all 0.2s; color: #555;
+    }
+    .channel-tab.active { background: #1a237e; color: white; border-color: #1a237e; }
+
+    .chat-feed { max-height: 300px; overflow-y: auto; }
+
+    .chat-msg {
+      padding: 10px 12px; border-bottom: 1px solid #f0f0f0;
+      display: flex; gap: 10px; align-items: flex-start;
+    }
+    .chat-msg:last-child { border-bottom: none; }
+    .chat-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #1a237e; color: white; display: flex; align-items: center;
+      justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0;
+    }
+    .chat-body { flex: 1; }
+    .chat-meta { display: flex; gap: 8px; align-items: baseline; margin-bottom: 3px; }
+    .chat-user { font-weight: 700; font-size: 0.88rem; color: #1a237e; }
+    .chat-time { font-size: 0.75rem; color: #aaa; }
+    .chat-channel { font-size: 0.72rem; color: #888; background: #f5f5f5; padding: 1px 6px; border-radius: 8px; }
+    .chat-text { font-size: 0.88rem; color: #333; line-height: 1.5; }
+
+    .search-result {
+      padding: 10px 12px; border-radius: 8px; background: #f8f9ff;
+      border-left: 3px solid #1a237e; margin-bottom: 8px;
+    }
+    .result-meta { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+    .result-user { font-weight: 700; font-size: 0.85rem; color: #1a237e; }
+    .result-time { font-size: 0.75rem; color: #aaa; }
+    .result-channel { font-size: 0.72rem; color: #888; background: #e8eaf6; padding: 1px 6px; border-radius: 8px; }
+    .similarity-badge {
+      margin-left: auto; font-size: 0.75rem; font-weight: 700;
+      padding: 1px 8px; border-radius: 10px; background: #e8eaf6; color: #1a237e;
+    }
+    .result-text { font-size: 0.88rem; color: #333; line-height: 1.5; }
+
+    .result-box {
+      margin-top: 14px; padding: 14px; border-radius: 8px; font-size: 0.9rem; line-height: 1.6;
+    }
+    .result-box.success { background: #e8eaf6; border-left: 4px solid #1a237e; }
+    .result-box.error { background: #ffebee; border-left: 4px solid #e53935; }
+    .result-box.info { background: #e3f2fd; border-left: 4px solid #1565c0; }
+
+    .meta { font-size: 0.8rem; color: #888; margin-top: 8px; }
+    .hidden { display: none; }
+    .empty { color: #aaa; font-size: 0.88rem; text-align: center; padding: 20px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header-links">
+    <a href="/node" class="back-link">← Back to Home</a>
+    <a href="https://github.com/RYA234/typescript-container/issues/62" class="gh-link" target="_blank">GitHub #62</a>
+  </div>
+
+  <div class="page-header">
+    <h1>会話履歴検索</h1>
+    <p>Slack風チャットで会話を投稿・蓄積し、過去の会話をベクトル検索で取り出す</p>
+  </div>
+
+  <!-- 投稿カード（開発環境のみ） -->
+  <div class="card hidden" id="postCard">
+    <h2>💬 会話を投稿</h2>
+    <div class="form-row">
+      <div class="form-group">
+        <label>ユーザー名</label>
+        <input type="text" id="userInput" placeholder="例: Tanaka">
+      </div>
+      <div class="form-group">
+        <label>チャンネル</label>
+        <select id="channelInput">
+          <option value="general">general</option>
+          <option value="release">release</option>
+          <option value="dev">dev</option>
+          <option value="infra">infra</option>
+          <option value="qa">qa</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>メッセージ</label>
+      <textarea id="messageInput" placeholder="例: 本番デプロイ完了しました。バージョン2.1.3です。"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <button class="btn btn-primary" id="postBtn" onclick="doPost()">投稿する</button>
+      <button class="btn btn-danger" onclick="doDeleteAll()">全件削除</button>
+    </div>
+    <div id="postResult"></div>
+  </div>
+
+  <!-- 履歴カード -->
+  <div class="card">
+    <h2>📋 最新の会話履歴</h2>
+    <div class="channel-tabs" id="channelTabs">
+      <div class="channel-tab active" onclick="selectChannel(null, this)">すべて</div>
+      <div class="channel-tab" onclick="selectChannel('general', this)">general</div>
+      <div class="channel-tab" onclick="selectChannel('release', this)">release</div>
+      <div class="channel-tab" onclick="selectChannel('dev', this)">dev</div>
+      <div class="channel-tab" onclick="selectChannel('infra', this)">infra</div>
+      <div class="channel-tab" onclick="selectChannel('qa', this)">qa</div>
+    </div>
+    <div class="chat-feed" id="chatFeed"><div class="empty">読み込み中...</div></div>
+    <button class="btn btn-primary" onclick="loadHistory()" style="margin-top:10px;font-size:0.82rem;padding:6px 14px;">更新</button>
+  </div>
+
+  <!-- 検索カード -->
+  <div class="card">
+    <h2>🔍 過去の会話を検索</h2>
+    <div class="form-row">
+      <div class="form-group" style="flex:2;">
+        <label>検索キーワード・文章</label>
+        <input type="text" id="queryInput" placeholder="例: デプロイに関する会話">
+      </div>
+      <div class="form-group">
+        <label>チャンネル絞り込み</label>
+        <select id="searchChannel">
+          <option value="">すべて</option>
+          <option value="general">general</option>
+          <option value="release">release</option>
+          <option value="dev">dev</option>
+          <option value="infra">infra</option>
+          <option value="qa">qa</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="doSearch()">検索する</button>
+    <div id="searchResult"></div>
+  </div>
+</div>
+
+<script>
+  let currentChannel = null;
+
+  async function checkConfig() {
+    try {
+      const res = await fetch('/node/rag/chat/config');
+      const data = await res.json();
+      if (data.writeEnabled) document.getElementById('postCard').classList.remove('hidden');
+    } catch {}
+  }
+
+  function selectChannel(ch, el) {
+    currentChannel = ch;
+    document.querySelectorAll('.channel-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    loadHistory();
+  }
+
+  function escape(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function formatDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('ja-JP') + ' ' + d.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' });
+  }
+
+  function avatarChar(user) {
+    return (user || '?')[0].toUpperCase();
+  }
+
+  async function loadHistory() {
+    const feedEl = document.getElementById('chatFeed');
+    try {
+      const qs = currentChannel ? `?channel=${currentChannel}` : '';
+      const res = await fetch(`/node/rag/chat/history${qs}`);
+      const data = await res.json();
+      if (!data.messages || data.messages.length === 0) {
+        feedEl.innerHTML = '<div class="empty">まだメッセージがありません</div>';
+      } else {
+        feedEl.innerHTML = data.messages.map(m => `
+          <div class="chat-msg">
+            <div class="chat-avatar">${escape(avatarChar(m.user))}</div>
+            <div class="chat-body">
+              <div class="chat-meta">
+                <span class="chat-user">${escape(m.user)}</span>
+                <span class="chat-time">${formatDate(m.postedAt)}</span>
+                <span class="chat-channel">#${escape(m.channel)}</span>
+              </div>
+              <div class="chat-text">${escape(m.message)}</div>
+            </div>
+          </div>`).join('');
+      }
+    } catch {
+      feedEl.innerHTML = '<div class="empty">履歴の取得に失敗しました</div>';
+    }
+  }
+
+  async function doPost() {
+    const user = document.getElementById('userInput').value.trim();
+    const message = document.getElementById('messageInput').value.trim();
+    const channel = document.getElementById('channelInput').value;
+    const resultEl = document.getElementById('postResult');
+    const btn = document.getElementById('postBtn');
+
+    if (!user) { resultEl.innerHTML = '<div class="result-box error">ユーザー名を入力してください</div>'; return; }
+    if (!message) { resultEl.innerHTML = '<div class="result-box error">メッセージを入力してください</div>'; return; }
+
+    btn.disabled = true;
+    resultEl.innerHTML = '<div class="result-box info">投稿中...</div>';
+
+    try {
+      const res = await fetch('/node/rag/chat/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user, message, channel }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        resultEl.innerHTML = `<div class="result-box error">${escape(data.message)}</div>`;
+      } else {
+        resultEl.innerHTML = `<div class="result-box success">✅ 投稿完了 (${data.executionTimeMs}ms)</div>`;
+        document.getElementById('messageInput').value = '';
+        loadHistory();
+      }
+    } catch {
+      resultEl.innerHTML = '<div class="result-box error">通信エラーが発生しました</div>';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function doDeleteAll() {
+    if (!confirm('すべてのメッセージを削除しますか？')) return;
+    try {
+      const res = await fetch('/node/rag/chat/messages', { method: 'DELETE' });
+      const data = await res.json();
+      document.getElementById('postResult').innerHTML = `<div class="result-box info">${escape(data.message)}</div>`;
+      loadHistory();
+    } catch {
+      alert('削除エラーが発生しました');
+    }
+  }
+
+  async function doSearch() {
+    const query = document.getElementById('queryInput').value.trim();
+    const channel = document.getElementById('searchChannel').value || undefined;
+    const resultEl = document.getElementById('searchResult');
+
+    if (!query) { resultEl.innerHTML = '<div class="result-box error">検索キーワードを入力してください</div>'; return; }
+
+    resultEl.innerHTML = '<div class="result-box info">検索中...</div>';
+    try {
+      const res = await fetch('/node/rag/chat/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, channel, limit: 5 }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        resultEl.innerHTML = `<div class="result-box error">${escape(data.message)}</div>`;
+      } else if (data.results.length === 0) {
+        resultEl.innerHTML = '<div class="result-box info" style="margin-top:14px;">該当する会話が見つかりませんでした。</div>';
+      } else {
+        const items = data.results.map(r => `
+          <div class="search-result">
+            <div class="result-meta">
+              <span class="result-user">${escape(r.user)}</span>
+              <span class="result-time">${formatDate(r.postedAt)}</span>
+              <span class="result-channel">#${escape(r.channel)}</span>
+              <span class="similarity-badge">${(r.similarity * 100).toFixed(1)}%</span>
+            </div>
+            <div class="result-text">${escape(r.message)}</div>
+          </div>`).join('');
+        resultEl.innerHTML = `<div style="margin-top:14px;">${items}<div class="meta">処理時間: ${data.executionTimeMs}ms / ${data.results.length}件</div></div>`;
+      }
+    } catch {
+      resultEl.innerHTML = '<div class="result-box error">通信エラーが発生しました</div>';
+    }
+  }
+
+  document.getElementById('queryInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doSearch();
+  });
+
+  checkConfig();
+  loadHistory();
+</script>
+</body>
+</html>
