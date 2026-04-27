@@ -289,7 +289,7 @@
       if (!res.ok) { resultEl.innerHTML = `<div class="result-box error">${escape(data.message)}</div>`; return; }
 
       const traceHtml = data.langsmithTraceUrl
-        ? `<a href="${escape(data.langsmithTraceUrl)}" target="_blank" class="trace-link">🔗 LangSmithトレースを見る</a>`
+        ? `<a href="${escape(data.langsmithTraceUrl)}" target="_blank" class="trace-link">🔗 LangSmithダッシュボードを確認（rag-evaluationプロジェクト）</a>`
         : '<span style="font-size:0.82rem;color:#aaa;">LangSmithトレース: なし（ダミーキー）</span>';
 
       resultEl.innerHTML = `

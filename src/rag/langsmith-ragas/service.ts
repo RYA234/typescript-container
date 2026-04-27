@@ -45,7 +45,6 @@ export class EvalService {
 
     let answer: string;
     let langsmithTraceUrl: string | null = null;
-    const runId = crypto.randomUUID();
 
     if (this.langsmithClient) {
       const tracedGenerate = traceable(
@@ -54,14 +53,13 @@ export class EvalService {
           name: 'rag-query',
           client: this.langsmithClient,
           project_name: LANGSMITH_PROJECT,
-          id: runId,
           metadata: { question, contextCount: contexts.length },
         },
       );
       answer = contexts.length > 0
         ? await tracedGenerate(question, contexts.map((c, i) => `[チャンク${i + 1}]\n${c}`).join('\n\n'))
         : '関連するドキュメントが見つかりませんでした。';
-      langsmithTraceUrl = `https://smith.langchain.com/o/projects/p/${LANGSMITH_PROJECT}/runs/${runId}`;
+      langsmithTraceUrl = `https://smith.langchain.com/`;
     } else {
       const ctx = contexts.map((c, i) => `[チャンク${i + 1}]\n${c}`).join('\n\n');
       answer = contexts.length > 0
@@ -116,12 +114,17 @@ ${contexts.map((c, i) => `[${i + 1}] ${c}`).join('\n')}
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const result = await model.generateContent(prompt);
-        const text = result.response.text().replace(/```json\n?|```/g, '').trim();
-        const scores = JSON.parse(text) as { faithfulness: number; answerRelevancy: number; contextPrecision: number };
+        const raw = result.response.text();
+        const jsonMatch = raw.match(/\{[\s\S]*?"faithfulness"[\s\S]*?\}/);
+        if (!jsonMatch) throw new Error(`No JSON in response: ${raw.substring(0, 100)}`);
+        const scores = JSON.parse(jsonMatch[0]) as { faithfulness: number; answerRelevancy: number; contextPrecision: number };
         const overallScore = (scores.faithfulness + scores.answerRelevancy + scores.contextPrecision) / 3;
         return { ...scores, overallScore: Math.round(overallScore * 1000) / 1000 };
-      } catch {
-        if (attempt === 2) return this.zeroScores();
+      } catch (err) {
+        if (attempt === 2) {
+          console.error('[EvalService] evaluateWithRagas failed:', err);
+          return this.zeroScores();
+        }
         await new Promise((r) => setTimeout(r, 1000));
       }
     }
@@ -169,13 +172,13 @@ ${contexts.map((c, i) => `[${i + 1}] ${c}`).join('\n')}
 ${context}
 
 質問: ${question}`;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < 5; attempt++) {
       try {
         const result = await model.generateContent(prompt);
         return result.response.text();
       } catch (err) {
-        if (attempt === 2) throw err;
-        await new Promise((r) => setTimeout(r, 1000));
+        if (attempt === 4) throw err;
+        await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
       }
     }
     throw new Error('generateAnswer failed');

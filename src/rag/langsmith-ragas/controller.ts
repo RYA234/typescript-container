@@ -13,7 +13,8 @@ export const query = async (req: Request, res: Response): Promise<void> => {
   try {
     const result = await service.queryWithEval(question.trim(), Boolean(evaluate));
     res.json(result);
-  } catch {
+  } catch (err) {
+    console.error('[EvalController] query error:', err);
     res.status(502).json({ error: 'QUERY_ERROR', message: 'クエリに失敗しました' });
   }
 };
