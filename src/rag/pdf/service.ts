@@ -68,7 +68,7 @@ export class PdfService {
 
     const { data, error } = await supabase.rpc('match_pdf_chunks', {
       query_embedding: embedding,
-      match_threshold: 0.5,
+      match_threshold: 0.3,
       match_count: 3,
     });
 
@@ -155,8 +155,16 @@ export class PdfService {
 ${context}
 
 質問: ${question}`;
-    const result = await model.generateContent(prompt);
-    return result.response.text();
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+      } catch (err) {
+        if (attempt === 2) throw err;
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+    }
+    throw new Error('generateAnswer failed after retries');
   }
 
   private async generateEmbedding(text: string): Promise<number[]> {
