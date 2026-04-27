@@ -13,6 +13,7 @@ import pdfRouter from './pdf/router';
 import chatHistoryRouter from './chat-history/router';
 import scoredRouter from './score-display/router';
 import evalRouter from './langsmith-ragas/router';
+import hybridRouter from './hybrid-search/router';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 
@@ -109,7 +110,11 @@ router.get('/eval', (_req, res) => {
   res.sendFile(path.join(__dirname, 'langsmith-ragas', 'views', 'langsmith-ragas.html'));
 });
 router.use('/eval', evalRouter);
-router.get('/hybrid', placeholder('ハイブリッド検索'));
+// #66 ハイブリッド検索
+router.get('/hybrid', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'hybrid-search', 'views', 'hybrid-search.html'));
+});
+router.use('/hybrid', hybridRouter);
 router.get('/multimodal', placeholder('マルチモーダルRAG'));
 
 export default router;
