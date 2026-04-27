@@ -11,6 +11,7 @@ import dateFilterRouter from './date-filter/router';
 import ragAgentRouter from './rag-agent/router';
 import pdfRouter from './pdf/router';
 import chatHistoryRouter from './chat-history/router';
+import scoredRouter from './score-display/router';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 
@@ -97,7 +98,11 @@ router.get('/agent', (_req, res) => {
   res.sendFile(path.join(__dirname, 'rag-agent', 'views', 'rag-agent.html'));
 });
 router.use('/agent', ragAgentRouter);
-router.get('/score', placeholder('根拠スコア表示'));
+// #64 根拠スコア表示
+router.get('/score', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'score-display', 'views', 'score-display.html'));
+});
+router.use('/scored', scoredRouter);
 router.get('/eval', placeholder('LangSmith + Ragas評価'));
 router.get('/hybrid', placeholder('ハイブリッド検索'));
 router.get('/multimodal', placeholder('マルチモーダルRAG'));
